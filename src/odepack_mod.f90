@@ -1,6 +1,9 @@
 module odepack_mod
   use iso_fortran_env, only: dp => real64
+  implicit none
   private
+
+  public :: dp, lsoda_class
 
   abstract interface
     subroutine odepack_rhs(neq, t, y, ydot)
@@ -52,7 +55,6 @@ module odepack_mod
   end interface
 
   type :: lsoda_class
-    
     integer :: neq
     procedure(lsoda_rhs_fcn), pointer :: f => NULL()
     integer :: jt
@@ -63,8 +65,6 @@ module odepack_mod
     real(dp), allocatable :: rwork(:)
     integer :: liw
     integer, allocatable :: iwork(:)
-
-    ! more work memory
     integer :: istate = 1
     
   contains
@@ -102,7 +102,7 @@ contains
 
   subroutine lsoda_initialize(self, f, neq, &
                               h0, hmax, hmin, ixpr, mxstep, mxhnil, mxordn, mxords, jac, jt, &
-                              ierr)
+                              istate)
     class(lsoda_class), intent(inout) :: self
     procedure(lsoda_rhs_fcn) :: f
     integer, intent(in) :: neq
@@ -118,15 +118,15 @@ contains
     procedure(lsoda_jac_fcn), optional :: jac
     integer, optional, intent(in) :: jt
 
-    integer, intent(out) :: ierr
+    integer, intent(out) :: istate
 
-    ierr = 4
+    istate = 1
 
     self%f => f
     self%neq = neq
 
     ! allocate memory
-    self%lrw = 22 + neq * mx(16, neq + 9)
+    self%lrw = 22 + neq * max(16, neq + 9)
     if (allocated(self%rwork)) deallocate(self%rwork)
     allocate(self%rwork(self%lrw))
     self%liw = 20 + neq
@@ -182,7 +182,7 @@ contains
       if (jt == 1 .or. jt == 4) then
         if (.not.present(jac)) then
           ! err = 'if jt is 1 or 4, then jac must always be present'
-          ierr = -3
+          istate = -3
           return
         endif
       endif
@@ -193,7 +193,7 @@ contains
     if (present(jac)) then
       if (.not.present(jt)) then
         ! err = 'if jac is present, then jt must always be present'
-        ierr = -3
+        istate = -3
         return
       endif
       self%jac => jac
@@ -201,14 +201,15 @@ contains
 
   end subroutine
 
-  subroutine lsoda_integrate(self, y, t, tout, rtol, atol, itask, ierr)
+  subroutine lsoda_integrate(self, y, t, tout, rtol, atol, itask, istate)
     class(lsoda_class), intent(inout) :: self
     real(dp), intent(inout) :: y(:)
     real(dp), intent(inout) :: t
     real(dp), intent(in) :: tout
     real(dp), intent(in) :: rtol
     real(dp), intent(in) :: atol(:)
-    integer, intent(out) :: ierr
+    integer, intent(in) :: itask
+    integer, intent(out) :: istate
 
     integer :: itol
     integer, parameter :: iopt = 1
@@ -216,7 +217,7 @@ contains
     ! check dimensions
     if (size(y) /= self%neq) then
       ! err = 'lsoda_integrate: "y" has the wrong dimension.'
-      ierr = -3
+      istate = -3
       return
     endif
 
@@ -226,13 +227,13 @@ contains
       itol = 2
     else
       ! err = 'lsoda_integrate: "atol" can be size 1 or size neq.'
-      ierr = -3
+      istate = -3
       return
     endif
 
     call dlsoda(f, self%neq, y, t, tout, itol, rtol, atol, itask, &
                 self%istate, iopt, self%rwork, self%lrw, self%iwork, self%liw, jac, self%jt)
-    ierr = self%istate
+    istate = self%istate
 
   contains
     subroutine f(neq_, t_, y_, ydot_)

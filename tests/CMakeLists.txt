@@ -1,0 +1,3 @@
+add_executable(test_lsoda test_lsoda.f90)
+target_link_libraries(test_lsoda odepack_mod)
+target_include_directories(test_lsoda PUBLIC ${CMAKE_Fortran_MODULE_DIRECTORY})
