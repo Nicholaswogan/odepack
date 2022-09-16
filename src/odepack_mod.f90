@@ -6,7 +6,7 @@ module odepack_mod
   public :: dp, lsoda_class
 
   abstract interface
-    subroutine odepack_rhs(neq, t, y, ydot)
+    subroutine odepack_f(neq, t, y, ydot)
       import :: dp
       implicit none
       integer, intent(in) :: neq
@@ -26,6 +26,16 @@ module odepack_mod
       real(dp), intent(out) :: pd(nrowpd,neq)
       integer, intent(in) :: nrowpd
     end subroutine
+
+    subroutine odepack_g(neq, t, y, ng, gout)
+      import :: dp
+      implicit none
+      integer, intent(in) :: neq
+      real(dp), intent(in) :: t
+      real(dp), intent(in) :: y(neq)
+      integer, intent(in) :: ng
+      real(dp), intent(out) :: gout(ng)
+    end subroutine
   end interface
   
   interface
@@ -33,7 +43,7 @@ module odepack_mod
                       istate, iopt, rwork, lrw, iwork, liw, jac, jt)
       import :: dp
       implicit none
-      procedure(odepack_rhs) :: f
+      procedure(odepack_f) :: f
       integer, intent(in) :: neq
       real(dp), intent(inout) :: y(neq)
       real(dp), intent(inout) :: t
@@ -52,6 +62,32 @@ module odepack_mod
       integer, intent(in) :: jt
     end subroutine
 
+    subroutine dlsodar(f, neq, y, t, tout, itol, rtol, atol, itask, &
+                       istate, iopt, rwork, lrw, iwork, liw, jac, jt, g, ng, jroot)
+      import :: dp
+      implicit none
+      procedure(odepack_f) :: f
+      integer, intent(in) :: neq
+      real(dp), intent(inout) :: y(neq)
+      real(dp), intent(inout) :: t
+      real(dp), intent(in) :: tout
+      integer, intent(in) :: itol
+      real(dp), intent(in) :: rtol
+      real(dp), intent(in) :: atol(*)
+      integer, intent(in) :: itask
+      integer, intent(inout) :: istate
+      integer, intent(in) :: iopt
+      real(dp), intent(inout) :: rwork(lrw)
+      integer, intent(in) :: lrw
+      integer, intent(inout) :: iwork(liw)
+      integer, intent(in) :: liw
+      procedure(odepack_jac) :: jac
+      integer, intent(in) :: jt
+      procedure(odepack_g) :: g
+      integer, intent(in) :: ng
+      integer, intent(out) :: jroot(ng)
+    end subroutine
+
   end interface
 
   type :: lsoda_class
@@ -59,6 +95,9 @@ module odepack_mod
     procedure(lsoda_rhs_fcn), pointer :: f => NULL()
     integer :: jt
     procedure(lsoda_jac_fcn), pointer :: jac => NULL()
+    integer :: ng
+    procedure(lsoda_root_fcn), pointer :: g => NULL()
+    integer, allocatable :: jroot(:)
     
     ! work memory
     integer :: lrw
@@ -96,12 +135,23 @@ module odepack_mod
       real(dp), intent(out) :: pd(nrowpd,neq)
       integer, intent(in) :: nrowpd
     end subroutine
+
+    subroutine lsoda_root_fcn(self, neq, t, y, ng, gout)
+      import :: dp, lsoda_class
+      implicit none
+      class(lsoda_class), intent(inout) :: self
+      integer, intent(in) :: neq
+      real(dp), intent(in) :: t
+      real(dp), intent(in) :: y(neq)
+      integer, intent(in) :: ng
+      real(dp), intent(out) :: gout(ng)
+    end subroutine
   end interface
 
 contains
 
   subroutine lsoda_initialize(self, f, neq, &
-                              h0, hmax, hmin, ixpr, mxstep, mxhnil, mxordn, mxords, jac, jt, &
+                              h0, hmax, hmin, ixpr, mxstep, mxhnil, mxordn, mxords, jac, jt, g, ng, &
                               istate)
     class(lsoda_class), intent(inout) :: self
     procedure(lsoda_rhs_fcn) :: f
@@ -117,6 +167,8 @@ contains
     integer, optional, intent(in) :: mxords
     procedure(lsoda_jac_fcn), optional :: jac
     integer, optional, intent(in) :: jt
+    procedure(lsoda_root_fcn), optional :: g
+    integer, optional, intent(in) :: ng
 
     integer, intent(out) :: istate
 
@@ -199,6 +251,19 @@ contains
       self%jac => jac
     endif
 
+    ! root function
+    if (present(g)) then
+      if (.not.present(ng)) then
+        istate = -3
+        return
+      endif
+      self%g => g
+      self%ng = ng
+      allocate(self%jroot(ng))
+    else
+      self%ng = 0
+    endif
+
   end subroutine
 
   subroutine lsoda_integrate(self, y, t, tout, rtol, atol, itask, istate)
@@ -231,8 +296,14 @@ contains
       return
     endif
 
-    call dlsoda(f, self%neq, y, t, tout, itol, rtol, atol, itask, &
-                self%istate, iopt, self%rwork, self%lrw, self%iwork, self%liw, jac, self%jt)
+    if (associated(self%g)) then
+      call dlsodar(f, self%neq, y, t, tout, itol, rtol, atol, itask, &
+                   self%istate, iopt, self%rwork, self%lrw, self%iwork, self%liw, jac, self%jt, &
+                   g, self%ng, self%jroot)
+    else
+      call dlsoda(f, self%neq, y, t, tout, itol, rtol, atol, itask, &
+                  self%istate, iopt, self%rwork, self%lrw, self%iwork, self%liw, jac, self%jt)
+    endif
     istate = self%istate
 
   contains
@@ -253,6 +324,15 @@ contains
       real(dp), intent(out) :: pd_(nrowpd_,neq_)
       integer, intent(in) :: nrowpd_
       call self%jac(neq_, t_, y_, ml_, mu_, pd_, nrowpd_)
+    end subroutine
+
+    subroutine g(neq_, t_, y_, ng_, gout_)
+      integer, intent(in) :: neq_
+      real(dp), intent(in) :: t_
+      real(dp), intent(in) :: y_(neq_)
+      integer, intent(in) :: ng_
+      real(dp), intent(out) :: gout_(ng_)
+      call self%g(neq_, t_, y_, ng_, gout_)
     end subroutine
   end subroutine
 
