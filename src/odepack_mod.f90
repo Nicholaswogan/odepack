@@ -157,7 +157,7 @@ contains
     if (present(mxstep)) then
       self%iwork(6) = mxstep
     else
-      self%iwork(6) = 500
+      self%iwork(6) = 10000
     endif
     if (present(mxhnil)) then
       self%iwork(7) = mxhnil

@@ -11,7 +11,7 @@ contains
     real(dp) :: correct_y(2) = [0.38583246250193476_dp, 4.602012234037773_dp]
 
     neq = 2
-    call ls%initialize(rhs, neq, mxstep = 100000, istate=istate)
+    call ls%initialize(rhs, neq, istate=istate)
     if (istate < 0) then
       print*,istate
       stop 1
