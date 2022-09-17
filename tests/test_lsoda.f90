@@ -1,20 +1,19 @@
 program test_lsoda
   use odepack_mod
   implicit none
-  call test()
+  call test_simple()
 contains
-  subroutine test()
+  subroutine test_simple()
     type(lsoda_class) :: ls
     integer :: neq, itask, istate
     real(dp) :: y(2), t, tout, rtol, atol(1)
-
     real(dp) :: correct_y(2) = [0.38583246250193476_dp, 4.602012234037773_dp]
 
     neq = 2
     call ls%initialize(rhs, neq, istate=istate)
     if (istate < 0) then
       print*,istate
-      stop 1
+      error stop '"test_simple" failed'
     endif
 
     y(:) = [5.0_dp, 0.8_dp]
@@ -23,18 +22,20 @@ contains
     rtol = 1.0e-8_dp
     atol = 1.0e-8_dp
     itask = 1
+    istate = 1
     call ls%integrate(y, t, tout, rtol, atol, itask, istate)
     if (istate < 0) then
       print*,istate
-      stop 1
+      error stop '"test_simple" failed'
     endif
 
     if (.not.all(is_close(correct_y, y))) then
       print*,correct_y
       print*,y
-      stop 1
+      error stop '"test_simple" failed'
     endif
 
+    print*,'"test_simple" passed'
   end subroutine
 
   subroutine rhs(self, neq, t, y, ydot)

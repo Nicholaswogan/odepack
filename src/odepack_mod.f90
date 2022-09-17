@@ -8,20 +8,28 @@ module odepack_mod
   public :: dp, lsoda_class
 
   type :: lsoda_class
-    integer :: neq
-    procedure(lsoda_rhs_fcn), pointer :: f => NULL()
-    integer :: jt
-    procedure(lsoda_jac_fcn), pointer :: jac => NULL()
-    integer :: ng
-    procedure(lsoda_root_fcn), pointer :: g => NULL()
-    integer, allocatable :: jroot(:)
+
+    ! functions
+    integer :: neq !! number of ODEs
+    procedure(lsoda_rhs_fcn), pointer :: f => NULL() !! right-hand-side of ODEs
+    integer :: jt !! Jacobian type indicator
+                  !! 1 means a user-supplied full (NEQ by NEQ) Jacobian.
+                  !! 2 means an internally generated (difference quotient) full
+                  !!   Jacobian (using NEQ extra calls to F per df/dy value).
+                  !! 4 means a user-supplied banded Jacobian.
+                  !! 5 means an internally generated banded Jacobian (using
+                  !!   ML+MU+1 extra calls to F per df/dy evaluation).
+    procedure(lsoda_jac_fcn), pointer :: jac => NULL() !! jacobian of ODEs
+    integer :: ng !! number of roots in g
+    procedure(lsoda_root_fcn), pointer :: g => NULL() !! Root subroutine.
+    integer, allocatable :: jroot(:) !! On a return with ISTATE = 3 (one or more roots found),
+                                     !! JROOT(i) = 1 if g(i) has a root at T, or JROOT(i) = 0 if not.
     
     ! work memory
     integer :: lrw
     real(dp), allocatable :: rwork(:)
     integer :: liw
     integer, allocatable :: iwork(:)
-    integer :: istate = 1
 
     ! common block data
     type(odepack_common_data) :: common_data
@@ -89,7 +97,6 @@ contains
     integer, optional, intent(in) :: jt
     procedure(lsoda_root_fcn), optional :: g
     integer, optional, intent(in) :: ng
-
     integer, intent(out) :: istate
 
     istate = 1
@@ -146,8 +153,6 @@ contains
     else
       self%iwork(9) = 5
     endif
-
-    self%istate = 1
     
     ! jacobian stuff
     if (present(jt)) then
@@ -194,7 +199,7 @@ contains
     real(dp), intent(in) :: rtol
     real(dp), intent(in) :: atol(:)
     integer, intent(in) :: itask
-    integer, intent(out) :: istate
+    integer, intent(inout) :: istate
 
     integer :: itol
     integer, parameter :: iopt = 1
@@ -218,14 +223,13 @@ contains
 
     if (associated(self%g)) then
       call dlsodar(f, self%neq, y, t, tout, itol, rtol, atol, itask, &
-                   self%istate, iopt, self%rwork, self%lrw, self%iwork, self%liw, jac, self%jt, &
+                   istate, iopt, self%rwork, self%lrw, self%iwork, self%liw, jac, self%jt, &
                    g, self%ng, self%jroot, self%common_data)
     else
       call dlsoda(f, self%neq, y, t, tout, itol, rtol, atol, itask, &
-                  self%istate, iopt, self%rwork, self%lrw, self%iwork, self%liw, jac, self%jt, &
+                  istate, iopt, self%rwork, self%lrw, self%iwork, self%liw, jac, self%jt, &
                   self%common_data)
     endif
-    istate = self%istate
 
   contains
     subroutine f(neq_, t_, y_, ydot_)
