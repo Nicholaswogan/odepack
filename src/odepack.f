@@ -1,10 +1,15 @@
 *DECK DLSODA
       SUBROUTINE DLSODA (F, NEQ, Y, T, TOUT, ITOL, RTOL, ATOL, ITASK,
-     1            ISTATE, IOPT, RWORK, LRW, IWORK, LIW, JAC, JT)
+     1            ISTATE, IOPT, RWORK, LRW, IWORK, LIW, JAC, JT,
+     2            common_data)
+      use iso_c_binding, only: c_ptr, c_f_pointer, c_loc
+      use odepack_interface
+      use odepack_common
       EXTERNAL F, JAC
       INTEGER NEQ, ITOL, ITASK, ISTATE, IOPT, LRW, IWORK, LIW, JT
       DOUBLE PRECISION Y, T, TOUT, RTOL, ATOL, RWORK
       DIMENSION NEQ(*), Y(*), RTOL(*), ATOL(*), RWORK(LRW), IWORK(LIW)
+      type(odepack_common_data), target, intent(inout) :: common_data
 C-----------------------------------------------------------------------
 C This is the 12 November 2003 version of
 C DLSODA: Livermore Solver for Ordinary Differential Equations, with
@@ -986,17 +991,19 @@ C
 C-----------------------------------------------------------------------
       EXTERNAL DPRJA, DSOLSY
       DOUBLE PRECISION DUMACH, DMNORM
-      INTEGER INIT, MXSTEP, MXHNIL, NHNIL, NSLAST, NYH, IOWNS,
+      INTEGER, pointer :: 
+     1   INIT, MXSTEP, MXHNIL, NHNIL, NSLAST, NYH, IOWNS(:),
      1   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
      2   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
      3   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
-      INTEGER INSUFR, INSUFI, IXPR, IOWNS2, JTYP, MUSED, MXORDN, MXORDS
+      INTEGER, pointer ::
+     1   INSUFR, INSUFI, IXPR, IOWNS2(:), JTYP, MUSED, MXORDN, MXORDS
       INTEGER I, I1, I2, IFLAG, IMXER, KGO, LF0,
      1   LENIW, LENRW, LENWM, ML, MORD, MU, MXHNL0, MXSTP0
       INTEGER LEN1, LEN1C, LEN1N, LEN1S, LEN2, LENIWC, LENRWC
-      DOUBLE PRECISION ROWNS,
+      DOUBLE PRECISION, pointer :: ROWNS(:),
      1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      DOUBLE PRECISION TSW, ROWNS2, PDNORM
+      DOUBLE PRECISION, pointer :: TSW, ROWNS2(:), PDNORM
       DOUBLE PRECISION ATOLI, AYI, BIG, EWTI, H0, HMAX, HMX, RH, RTOLI,
      1   TCRIT, TDIST, TNEXT, TOL, TOLSF, TP, SIZE, SUM, W0
       DIMENSION MORD(2)
@@ -1014,17 +1021,138 @@ C The block DLSA01 is declared in subroutines DLSODA, DSTODA, and DPRJA.
 C Groups of variables are replaced by dummy arrays in the Common
 C declarations in routines where those variables are not used.
 C-----------------------------------------------------------------------
-      COMMON /DLS001/ ROWNS(209),
-     1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND,
-     2   INIT, MXSTEP, MXHNIL, NHNIL, NSLAST, NYH, IOWNS(6),
-     3   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
-     4   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
-     5   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
+C      COMMON /DLS001/ ROWNS(209),
+C     1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND,
+C     2   INIT, MXSTEP, MXHNIL, NHNIL, NSLAST, NYH, IOWNS(6),
+C     3   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
+C     4   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
+C     5   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
 C
-      COMMON /DLSA01/ TSW, ROWNS2(20), PDNORM,
-     1   INSUFR, INSUFI, IXPR, IOWNS2(2), JTYP, MUSED, MXORDN, MXORDS
+C      COMMON /DLSA01/ TSW, ROWNS2(20), PDNORM,
+C     1   INSUFR, INSUFI, IXPR, IOWNS2(2), JTYP, MUSED, MXORDN, MXORDS
 C
       DATA MORD(1),MORD(2)/12,5/, MXSTP0/500/, MXHNL0/10/
+C
+C     Common block pointers
+      type(DLS001_type), pointer :: DLS001
+      type(DLSA01_type), pointer :: DLSA01
+      type(c_ptr) :: tmp_ptr
+C-----------------------------------------------------------------------
+C This code associates variables with common data
+C-----------------------------------------------------------------------
+      DLS001 => common_data%DLS001
+
+      tmp_ptr = c_loc(DLS001%reals(1))
+      call c_f_pointer(tmp_ptr,ROWNS,[209])
+      tmp_ptr = c_loc(DLS001%reals(210))
+      call c_f_pointer(tmp_ptr,CCMAX)
+      tmp_ptr = c_loc(DLS001%reals(211))
+      call c_f_pointer(tmp_ptr,EL0)
+      tmp_ptr = c_loc(DLS001%reals(212))
+      call c_f_pointer(tmp_ptr,H)
+      tmp_ptr = c_loc(DLS001%reals(213))
+      call c_f_pointer(tmp_ptr,HMIN)
+      tmp_ptr = c_loc(DLS001%reals(214))
+      call c_f_pointer(tmp_ptr,HMXI)
+      tmp_ptr = c_loc(DLS001%reals(215))
+      call c_f_pointer(tmp_ptr,HU)
+      tmp_ptr = c_loc(DLS001%reals(216))
+      call c_f_pointer(tmp_ptr,RC)
+      tmp_ptr = c_loc(DLS001%reals(217))
+      call c_f_pointer(tmp_ptr,TN)
+      tmp_ptr = c_loc(DLS001%reals(218))
+      call c_f_pointer(tmp_ptr,UROUND)
+
+      tmp_ptr = c_loc(DLS001%ints(1))
+      call c_f_pointer(tmp_ptr,INIT)
+      tmp_ptr = c_loc(DLS001%ints(2))
+      call c_f_pointer(tmp_ptr,MXSTEP)
+      tmp_ptr = c_loc(DLS001%ints(3))
+      call c_f_pointer(tmp_ptr,MXHNIL)
+      tmp_ptr = c_loc(DLS001%ints(4))
+      call c_f_pointer(tmp_ptr,NHNIL)
+      tmp_ptr = c_loc(DLS001%ints(5))
+      call c_f_pointer(tmp_ptr,NSLAST)
+      tmp_ptr = c_loc(DLS001%ints(6))
+      call c_f_pointer(tmp_ptr,NYH)
+      tmp_ptr = c_loc(DLS001%ints(7))
+      call c_f_pointer(tmp_ptr,IOWNS,[6])
+      tmp_ptr = c_loc(DLS001%ints(13))
+      call c_f_pointer(tmp_ptr,ICF)
+      tmp_ptr = c_loc(DLS001%ints(14))
+      call c_f_pointer(tmp_ptr,IERPJ)
+      tmp_ptr = c_loc(DLS001%ints(15))
+      call c_f_pointer(tmp_ptr,IERSL)
+      tmp_ptr = c_loc(DLS001%ints(16))
+      call c_f_pointer(tmp_ptr,JCUR)
+      tmp_ptr = c_loc(DLS001%ints(17))
+      call c_f_pointer(tmp_ptr,JSTART)
+      tmp_ptr = c_loc(DLS001%ints(18))
+      call c_f_pointer(tmp_ptr,KFLAG)
+      tmp_ptr = c_loc(DLS001%ints(19))
+      call c_f_pointer(tmp_ptr,L)
+      tmp_ptr = c_loc(DLS001%ints(20))
+      call c_f_pointer(tmp_ptr,LYH)
+      tmp_ptr = c_loc(DLS001%ints(21))
+      call c_f_pointer(tmp_ptr,LEWT)
+      tmp_ptr = c_loc(DLS001%ints(22))
+      call c_f_pointer(tmp_ptr,LACOR)
+      tmp_ptr = c_loc(DLS001%ints(23))
+      call c_f_pointer(tmp_ptr,LSAVF)
+      tmp_ptr = c_loc(DLS001%ints(24))
+      call c_f_pointer(tmp_ptr,LWM)
+      tmp_ptr = c_loc(DLS001%ints(25))
+      call c_f_pointer(tmp_ptr,LIWM)
+      tmp_ptr = c_loc(DLS001%ints(26))
+      call c_f_pointer(tmp_ptr,METH)
+      tmp_ptr = c_loc(DLS001%ints(27))
+      call c_f_pointer(tmp_ptr,MITER)
+      tmp_ptr = c_loc(DLS001%ints(28))
+      call c_f_pointer(tmp_ptr,MAXORD)
+      tmp_ptr = c_loc(DLS001%ints(29))
+      call c_f_pointer(tmp_ptr,MAXCOR)
+      tmp_ptr = c_loc(DLS001%ints(30))
+      call c_f_pointer(tmp_ptr,MSBP)
+      tmp_ptr = c_loc(DLS001%ints(31))
+      call c_f_pointer(tmp_ptr,MXNCF)
+      tmp_ptr = c_loc(DLS001%ints(32))
+      call c_f_pointer(tmp_ptr,N)
+      tmp_ptr = c_loc(DLS001%ints(33))
+      call c_f_pointer(tmp_ptr,NQ)
+      tmp_ptr = c_loc(DLS001%ints(34))
+      call c_f_pointer(tmp_ptr,NST)
+      tmp_ptr = c_loc(DLS001%ints(35))
+      call c_f_pointer(tmp_ptr,NFE)
+      tmp_ptr = c_loc(DLS001%ints(36))
+      call c_f_pointer(tmp_ptr,NJE)
+      tmp_ptr = c_loc(DLS001%ints(37))
+      call c_f_pointer(tmp_ptr,NQU)
+     
+      DLSA01 => common_data%DLSA01
+
+      tmp_ptr = c_loc(DLSA01%reals(1))
+      call c_f_pointer(tmp_ptr,TSW)
+      tmp_ptr = c_loc(DLSA01%reals(2))
+      call c_f_pointer(tmp_ptr,ROWNS2,[20])
+      tmp_ptr = c_loc(DLSA01%reals(22))
+      call c_f_pointer(tmp_ptr,PDNORM)
+
+      tmp_ptr = c_loc(DLSA01%ints(1))
+      call c_f_pointer(tmp_ptr,INSUFR)
+      tmp_ptr = c_loc(DLSA01%ints(2))
+      call c_f_pointer(tmp_ptr,INSUFI)
+      tmp_ptr = c_loc(DLSA01%ints(3))
+      call c_f_pointer(tmp_ptr,IXPR)
+      tmp_ptr = c_loc(DLSA01%ints(4))
+      call c_f_pointer(tmp_ptr,IOWNS2,[2])
+      tmp_ptr = c_loc(DLSA01%ints(6))
+      call c_f_pointer(tmp_ptr,JTYP)
+      tmp_ptr = c_loc(DLSA01%ints(7))
+      call c_f_pointer(tmp_ptr,MUSED)
+      tmp_ptr = c_loc(DLSA01%ints(8))
+      call c_f_pointer(tmp_ptr,MXORDN)
+      tmp_ptr = c_loc(DLSA01%ints(9))
+      call c_f_pointer(tmp_ptr,MXORDS)
 C-----------------------------------------------------------------------
 C Block A.
 C This code block is executed on every call.
@@ -1282,7 +1410,7 @@ C-----------------------------------------------------------------------
  200  NSLAST = NST
       GO TO (210, 250, 220, 230, 240), ITASK
  210  IF ((TN - TOUT)*H .LT. 0.0D0) GO TO 250
-      CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG)
+      CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG, common_data)
       IF (IFLAG .NE. 0) GO TO 627
       T = TOUT
       GO TO 420
@@ -1295,7 +1423,7 @@ C-----------------------------------------------------------------------
       IF ((TN - TCRIT)*H .GT. 0.0D0) GO TO 624
       IF ((TCRIT - TOUT)*H .LT. 0.0D0) GO TO 625
       IF ((TN - TOUT)*H .LT. 0.0D0) GO TO 245
-      CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG)
+      CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG, common_data)
       IF (IFLAG .NE. 0) GO TO 627
       T = TOUT
       GO TO 420
@@ -1354,7 +1482,7 @@ C   CALL DSTODA(NEQ,Y,YH,NYH,YH,EWT,SAVF,ACOR,WM,IWM,F,JAC,DPRJA,DSOLSY)
 C-----------------------------------------------------------------------
       CALL DSTODA (NEQ, Y, RWORK(LYH), NYH, RWORK(LYH), RWORK(LEWT),
      1   RWORK(LSAVF), RWORK(LACOR), RWORK(LWM), IWORK(LIWM),
-     2   F, JAC, DPRJA, DSOLSY)
+     2   F, JAC, DPRJA, DSOLSY, common_data)
       KGO = 1 - KFLAG
       GO TO (300, 530, 540), KGO
 C-----------------------------------------------------------------------
@@ -1389,7 +1517,7 @@ C-----------------------------------------------------------------------
  310  GO TO (320, 400, 330, 340, 350), ITASK
 C ITASK = 1.  If TOUT has been reached, interpolate. -------------------
  320  IF ((TN - TOUT)*H .LT. 0.0D0) GO TO 250
-      CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG)
+      CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG, common_data)
       T = TOUT
       GO TO 420
 C ITASK = 3.  Jump to exit if TOUT was reached. ------------------------
@@ -1397,7 +1525,7 @@ C ITASK = 3.  Jump to exit if TOUT was reached. ------------------------
       GO TO 250
 C ITASK = 4.  See if TOUT or TCRIT was reached.  Adjust H if necessary.
  340  IF ((TN - TOUT)*H .LT. 0.0D0) GO TO 345
-      CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG)
+      CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG, common_data)
       T = TOUT
       GO TO 420
  345  HMX = ABS(TN) + ABS(H)
@@ -1633,7 +1761,11 @@ C----------------------- End of Subroutine DLSODA ----------------------
 *DECK DLSODAR
       SUBROUTINE DLSODAR (F, NEQ, Y, T, TOUT, ITOL, RTOL, ATOL, ITASK,
      1            ISTATE, IOPT, RWORK, LRW, IWORK, LIW, JAC, JT,
-     2            G, NG, JROOT)
+     2            G, NG, JROOT, common_data)
+      use iso_c_binding, only: c_ptr, c_f_pointer, c_loc
+      use odepack_interface
+      use odepack_common
+      type(odepack_common_data), target, intent(inout) :: common_data
       EXTERNAL F, JAC, G
       INTEGER NEQ, ITOL, ITASK, ISTATE, IOPT, LRW, IWORK, LIW, JT,
      1   NG, JROOT
@@ -2740,20 +2872,23 @@ C
 C-----------------------------------------------------------------------
       EXTERNAL DPRJA, DSOLSY
       DOUBLE PRECISION DUMACH, DMNORM
-      INTEGER INIT, MXSTEP, MXHNIL, NHNIL, NSLAST, NYH, IOWNS,
+      INTEGER, pointer ::
+     1   INIT, MXSTEP, MXHNIL, NHNIL, NSLAST, NYH, IOWNS(:),
      1   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
      2   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
      3   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
-      INTEGER INSUFR, INSUFI, IXPR, IOWNS2, JTYP, MUSED, MXORDN, MXORDS
-      INTEGER LG0, LG1, LGX, IOWNR3, IRFND, ITASKC, NGC, NGE
+      INTEGER, pointer ::
+     1   INSUFR, INSUFI, IXPR, IOWNS2(:), JTYP, MUSED, MXORDN, MXORDS
+      INTEGER, pointer :: 
+     1   LG0, LG1, LGX, IOWNR3(:), IRFND, ITASKC, NGC, NGE
       INTEGER I, I1, I2, IFLAG, IMXER, KGO, LENIW,
      1   LENRW, LENWM, LF0, ML, MORD, MU, MXHNL0, MXSTP0
       INTEGER LEN1, LEN1C, LEN1N, LEN1S, LEN2, LENIWC, LENRWC
       INTEGER IRFP, IRT, LENYH, LYHNEW
-      DOUBLE PRECISION ROWNS,
+      DOUBLE PRECISION, pointer :: ROWNS(:),
      1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      DOUBLE PRECISION TSW, ROWNS2, PDNORM
-      DOUBLE PRECISION ROWNR3, T0, TLAST, TOUTC
+      DOUBLE PRECISION, pointer :: TSW, ROWNS2(:), PDNORM
+      DOUBLE PRECISION, pointer :: ROWNR3(:), T0, TLAST, TOUTC
       DOUBLE PRECISION ATOLI, AYI, BIG, EWTI, H0, HMAX, HMX, RH, RTOLI,
      1   TCRIT, TDIST, TNEXT, TOL, TOLSF, TP, SIZE, SUM, W0
       DIMENSION MORD(2)
@@ -2772,20 +2907,170 @@ C The block DLSR01 is declared in subroutines DLSODAR, DRCHEK, DROOTS.
 C Groups of variables are replaced by dummy arrays in the Common
 C declarations in routines where those variables are not used.
 C-----------------------------------------------------------------------
-      COMMON /DLS001/ ROWNS(209),
-     1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND,
-     2   INIT, MXSTEP, MXHNIL, NHNIL, NSLAST, NYH, IOWNS(6),
-     3   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
-     4   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
-     5   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
+C      COMMON /DLS001/ ROWNS(209),
+C     1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND,
+C     2   INIT, MXSTEP, MXHNIL, NHNIL, NSLAST, NYH, IOWNS(6),
+C     3   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
+C     4   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
+C     5   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
 C
-      COMMON /DLSA01/ TSW, ROWNS2(20), PDNORM,
-     1   INSUFR, INSUFI, IXPR, IOWNS2(2), JTYP, MUSED, MXORDN, MXORDS
+C      COMMON /DLSA01/ TSW, ROWNS2(20), PDNORM,
+C     1   INSUFR, INSUFI, IXPR, IOWNS2(2), JTYP, MUSED, MXORDN, MXORDS
 C
-      COMMON /DLSR01/ ROWNR3(2), T0, TLAST, TOUTC,
-     1   LG0, LG1, LGX, IOWNR3(2), IRFND, ITASKC, NGC, NGE
+C      COMMON /DLSR01/ ROWNR3(2), T0, TLAST, TOUTC,
+C     1   LG0, LG1, LGX, IOWNR3(2), IRFND, ITASKC, NGC, NGE
 C
       DATA MORD(1),MORD(2)/12,5/, MXSTP0/500/, MXHNL0/10/
+C
+C     Common block pointers
+      type(DLS001_type), pointer :: DLS001
+      type(DLSA01_type), pointer :: DLSA01
+      type(DLSR01_type), pointer :: DLSR01
+      type(c_ptr) :: tmp_ptr
+C-----------------------------------------------------------------------
+C This code associates variables with common data
+C-----------------------------------------------------------------------
+      DLS001 => common_data%DLS001
+
+      tmp_ptr = c_loc(DLS001%reals(1))
+      call c_f_pointer(tmp_ptr,ROWNS,[209])
+      tmp_ptr = c_loc(DLS001%reals(210))
+      call c_f_pointer(tmp_ptr,CCMAX)
+      tmp_ptr = c_loc(DLS001%reals(211))
+      call c_f_pointer(tmp_ptr,EL0)
+      tmp_ptr = c_loc(DLS001%reals(212))
+      call c_f_pointer(tmp_ptr,H)
+      tmp_ptr = c_loc(DLS001%reals(213))
+      call c_f_pointer(tmp_ptr,HMIN)
+      tmp_ptr = c_loc(DLS001%reals(214))
+      call c_f_pointer(tmp_ptr,HMXI)
+      tmp_ptr = c_loc(DLS001%reals(215))
+      call c_f_pointer(tmp_ptr,HU)
+      tmp_ptr = c_loc(DLS001%reals(216))
+      call c_f_pointer(tmp_ptr,RC)
+      tmp_ptr = c_loc(DLS001%reals(217))
+      call c_f_pointer(tmp_ptr,TN)
+      tmp_ptr = c_loc(DLS001%reals(218))
+      call c_f_pointer(tmp_ptr,UROUND)
+
+      tmp_ptr = c_loc(DLS001%ints(1))
+      call c_f_pointer(tmp_ptr,INIT)
+      tmp_ptr = c_loc(DLS001%ints(2))
+      call c_f_pointer(tmp_ptr,MXSTEP)
+      tmp_ptr = c_loc(DLS001%ints(3))
+      call c_f_pointer(tmp_ptr,MXHNIL)
+      tmp_ptr = c_loc(DLS001%ints(4))
+      call c_f_pointer(tmp_ptr,NHNIL)
+      tmp_ptr = c_loc(DLS001%ints(5))
+      call c_f_pointer(tmp_ptr,NSLAST)
+      tmp_ptr = c_loc(DLS001%ints(6))
+      call c_f_pointer(tmp_ptr,NYH)
+      tmp_ptr = c_loc(DLS001%ints(7))
+      call c_f_pointer(tmp_ptr,IOWNS,[6])
+      tmp_ptr = c_loc(DLS001%ints(13))
+      call c_f_pointer(tmp_ptr,ICF)
+      tmp_ptr = c_loc(DLS001%ints(14))
+      call c_f_pointer(tmp_ptr,IERPJ)
+      tmp_ptr = c_loc(DLS001%ints(15))
+      call c_f_pointer(tmp_ptr,IERSL)
+      tmp_ptr = c_loc(DLS001%ints(16))
+      call c_f_pointer(tmp_ptr,JCUR)
+      tmp_ptr = c_loc(DLS001%ints(17))
+      call c_f_pointer(tmp_ptr,JSTART)
+      tmp_ptr = c_loc(DLS001%ints(18))
+      call c_f_pointer(tmp_ptr,KFLAG)
+      tmp_ptr = c_loc(DLS001%ints(19))
+      call c_f_pointer(tmp_ptr,L)
+      tmp_ptr = c_loc(DLS001%ints(20))
+      call c_f_pointer(tmp_ptr,LYH)
+      tmp_ptr = c_loc(DLS001%ints(21))
+      call c_f_pointer(tmp_ptr,LEWT)
+      tmp_ptr = c_loc(DLS001%ints(22))
+      call c_f_pointer(tmp_ptr,LACOR)
+      tmp_ptr = c_loc(DLS001%ints(23))
+      call c_f_pointer(tmp_ptr,LSAVF)
+      tmp_ptr = c_loc(DLS001%ints(24))
+      call c_f_pointer(tmp_ptr,LWM)
+      tmp_ptr = c_loc(DLS001%ints(25))
+      call c_f_pointer(tmp_ptr,LIWM)
+      tmp_ptr = c_loc(DLS001%ints(26))
+      call c_f_pointer(tmp_ptr,METH)
+      tmp_ptr = c_loc(DLS001%ints(27))
+      call c_f_pointer(tmp_ptr,MITER)
+      tmp_ptr = c_loc(DLS001%ints(28))
+      call c_f_pointer(tmp_ptr,MAXORD)
+      tmp_ptr = c_loc(DLS001%ints(29))
+      call c_f_pointer(tmp_ptr,MAXCOR)
+      tmp_ptr = c_loc(DLS001%ints(30))
+      call c_f_pointer(tmp_ptr,MSBP)
+      tmp_ptr = c_loc(DLS001%ints(31))
+      call c_f_pointer(tmp_ptr,MXNCF)
+      tmp_ptr = c_loc(DLS001%ints(32))
+      call c_f_pointer(tmp_ptr,N)
+      tmp_ptr = c_loc(DLS001%ints(33))
+      call c_f_pointer(tmp_ptr,NQ)
+      tmp_ptr = c_loc(DLS001%ints(34))
+      call c_f_pointer(tmp_ptr,NST)
+      tmp_ptr = c_loc(DLS001%ints(35))
+      call c_f_pointer(tmp_ptr,NFE)
+      tmp_ptr = c_loc(DLS001%ints(36))
+      call c_f_pointer(tmp_ptr,NJE)
+      tmp_ptr = c_loc(DLS001%ints(37))
+      call c_f_pointer(tmp_ptr,NQU)
+     
+      DLSA01 => common_data%DLSA01
+
+      tmp_ptr = c_loc(DLSA01%reals(1))
+      call c_f_pointer(tmp_ptr,TSW)
+      tmp_ptr = c_loc(DLSA01%reals(2))
+      call c_f_pointer(tmp_ptr,ROWNS2,[20])
+      tmp_ptr = c_loc(DLSA01%reals(22))
+      call c_f_pointer(tmp_ptr,PDNORM)
+
+      tmp_ptr = c_loc(DLSA01%ints(1))
+      call c_f_pointer(tmp_ptr,INSUFR)
+      tmp_ptr = c_loc(DLSA01%ints(2))
+      call c_f_pointer(tmp_ptr,INSUFI)
+      tmp_ptr = c_loc(DLSA01%ints(3))
+      call c_f_pointer(tmp_ptr,IXPR)
+      tmp_ptr = c_loc(DLSA01%ints(4))
+      call c_f_pointer(tmp_ptr,IOWNS2,[2])
+      tmp_ptr = c_loc(DLSA01%ints(6))
+      call c_f_pointer(tmp_ptr,JTYP)
+      tmp_ptr = c_loc(DLSA01%ints(7))
+      call c_f_pointer(tmp_ptr,MUSED)
+      tmp_ptr = c_loc(DLSA01%ints(8))
+      call c_f_pointer(tmp_ptr,MXORDN)
+      tmp_ptr = c_loc(DLSA01%ints(9))
+      call c_f_pointer(tmp_ptr,MXORDS)
+
+      DLSR01 => common_data%DLSR01
+
+      tmp_ptr = c_loc(DLSR01%reals(1))
+      call c_f_pointer(tmp_ptr,ROWNR3,[2])
+      tmp_ptr = c_loc(DLSR01%reals(3))
+      call c_f_pointer(tmp_ptr,T0)
+      tmp_ptr = c_loc(DLSR01%reals(4))
+      call c_f_pointer(tmp_ptr,TLAST)
+      tmp_ptr = c_loc(DLSR01%reals(5))
+      call c_f_pointer(tmp_ptr,TOUTC)
+
+      tmp_ptr = c_loc(DLSR01%ints(1))
+      call c_f_pointer(tmp_ptr,LG0)
+      tmp_ptr = c_loc(DLSR01%ints(2))
+      call c_f_pointer(tmp_ptr,LG1)
+      tmp_ptr = c_loc(DLSR01%ints(3))
+      call c_f_pointer(tmp_ptr,LGX)
+      tmp_ptr = c_loc(DLSR01%ints(4))
+      call c_f_pointer(tmp_ptr,IOWNR3,[2])
+      tmp_ptr = c_loc(DLSR01%ints(6))
+      call c_f_pointer(tmp_ptr,IRFND)
+      tmp_ptr = c_loc(DLSR01%ints(7))
+      call c_f_pointer(tmp_ptr,ITASKC)
+      tmp_ptr = c_loc(DLSR01%ints(8))
+      call c_f_pointer(tmp_ptr,NGC)
+      tmp_ptr = c_loc(DLSR01%ints(9))
+      call c_f_pointer(tmp_ptr,NGE)
 C-----------------------------------------------------------------------
 C Block A.
 C This code block is executed on every call.
@@ -3059,7 +3344,7 @@ C Check for a zero of g at T. ------------------------------------------
       TOUTC = TOUT
       IF (NGC .EQ. 0) GO TO 270
       CALL DRCHEK (1, G, NEQ, Y, RWORK(LYH), NYH,
-     1   RWORK(LG0), RWORK(LG1), RWORK(LGX), JROOT, IRT)
+     1   RWORK(LG0), RWORK(LG1), RWORK(LGX), JROOT, IRT, common_data)
       IF (IRT .EQ. 0) GO TO 270
       GO TO 632
 C-----------------------------------------------------------------------
@@ -3077,7 +3362,7 @@ C
       IF (NGC .EQ. 0) GO TO 205
       IF (ITASK .EQ. 1 .OR. ITASK .EQ. 4) TOUTC = TOUT
       CALL DRCHEK (2, G, NEQ, Y, RWORK(LYH), NYH,
-     1   RWORK(LG0), RWORK(LG1), RWORK(LGX), JROOT, IRT)
+     1   RWORK(LG0), RWORK(LG1), RWORK(LGX), JROOT, IRT, common_data)
       IF (IRT .NE. 1) GO TO 205
       IRFND = 1
       ISTATE = 3
@@ -3089,7 +3374,7 @@ C
 C
       GO TO (210, 250, 220, 230, 240), ITASK
  210  IF ((TN - TOUT)*H .LT. 0.0D0) GO TO 250
-      CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG)
+      CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG, common_data)
       IF (IFLAG .NE. 0) GO TO 627
       T = TOUT
       GO TO 420
@@ -3102,7 +3387,7 @@ C
       IF ((TN - TCRIT)*H .GT. 0.0D0) GO TO 624
       IF ((TCRIT - TOUT)*H .LT. 0.0D0) GO TO 625
       IF ((TN - TOUT)*H .LT. 0.0D0) GO TO 245
-      CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG)
+      CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG, common_data)
       IF (IFLAG .NE. 0) GO TO 627
       T = TOUT
       GO TO 420
@@ -3162,7 +3447,7 @@ C   CALL DSTODA(NEQ,Y,YH,NYH,YH,EWT,SAVF,ACOR,WM,IWM,F,JAC,DPRJA,DSOLSY)
 C-----------------------------------------------------------------------
       CALL DSTODA (NEQ, Y, RWORK(LYH), NYH, RWORK(LYH), RWORK(LEWT),
      1   RWORK(LSAVF), RWORK(LACOR), RWORK(LWM), IWORK(LIWM),
-     2   F, JAC, DPRJA, DSOLSY)
+     2   F, JAC, DPRJA, DSOLSY, common_data)
       KGO = 1 - KFLAG
       GO TO (300, 530, 540), KGO
 C-----------------------------------------------------------------------
@@ -3199,7 +3484,7 @@ C-----------------------------------------------------------------------
 C
       IF (NGC .EQ. 0) GO TO 315
       CALL DRCHEK (3, G, NEQ, Y, RWORK(LYH), NYH,
-     1   RWORK(LG0), RWORK(LG1), RWORK(LGX), JROOT, IRT)
+     1   RWORK(LG0), RWORK(LG1), RWORK(LGX), JROOT, IRT, common_data)
       IF (IRT .NE. 1) GO TO 315
       IRFND = 1
       ISTATE = 3
@@ -3210,7 +3495,7 @@ C
       GO TO (320, 400, 330, 340, 350), ITASK
 C ITASK = 1.  If TOUT has been reached, interpolate. -------------------
  320  IF ((TN - TOUT)*H .LT. 0.0D0) GO TO 250
-      CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG)
+      CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG, common_data)
       T = TOUT
       GO TO 420
 C ITASK = 3.  Jump to exit if TOUT was reached. ------------------------
@@ -3218,7 +3503,7 @@ C ITASK = 3.  Jump to exit if TOUT was reached. ------------------------
       GO TO 250
 C ITASK = 4.  See if TOUT or TCRIT was reached.  Adjust H if necessary.
  340  IF ((TN - TOUT)*H .LT. 0.0D0) GO TO 345
-      CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG)
+      CALL DINTDY (TOUT, 0, RWORK(LYH), NYH, Y, IFLAG, common_data)
       T = TOUT
       GO TO 420
  345  HMX = ABS(TN) + ABS(H)

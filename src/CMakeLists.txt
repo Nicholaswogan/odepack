@@ -1,4 +1,6 @@
-add_library(odepack 
+add_library(odepack
+  odepack_interface.f90
+  odepack_common.f90
   odepack_sub1.f 
   odepack_sub2.f
   odepack.f

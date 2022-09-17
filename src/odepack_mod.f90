@@ -1,5 +1,6 @@
 module odepack_mod
   use iso_fortran_env, only: dp => real64
+  use odepack_common
   implicit none
   private
 
@@ -40,8 +41,9 @@ module odepack_mod
   
   interface
     subroutine dlsoda(f, neq, y, t, tout, itol, rtol, atol, itask, &
-                      istate, iopt, rwork, lrw, iwork, liw, jac, jt)
-      import :: dp
+                      istate, iopt, rwork, lrw, iwork, liw, jac, jt, &
+                      common_data)
+      import :: dp, odepack_common_data
       implicit none
       procedure(odepack_f) :: f
       integer, intent(in) :: neq
@@ -60,11 +62,13 @@ module odepack_mod
       integer, intent(in) :: liw
       procedure(odepack_jac) :: jac
       integer, intent(in) :: jt
+      type(odepack_common_data), target, intent(inout) :: common_data
     end subroutine
 
     subroutine dlsodar(f, neq, y, t, tout, itol, rtol, atol, itask, &
-                       istate, iopt, rwork, lrw, iwork, liw, jac, jt, g, ng, jroot)
-      import :: dp
+                       istate, iopt, rwork, lrw, iwork, liw, jac, jt, g, ng, jroot, &
+                       common_data)
+      import :: dp, odepack_common_data
       implicit none
       procedure(odepack_f) :: f
       integer, intent(in) :: neq
@@ -86,6 +90,7 @@ module odepack_mod
       procedure(odepack_g) :: g
       integer, intent(in) :: ng
       integer, intent(out) :: jroot(ng)
+      type(odepack_common_data), target, intent(inout) :: common_data
     end subroutine
 
   end interface
@@ -105,6 +110,9 @@ module odepack_mod
     integer :: liw
     integer, allocatable :: iwork(:)
     integer :: istate = 1
+
+    ! common block data
+    type(odepack_common_data) :: common_data
     
   contains
     procedure :: initialize => lsoda_initialize
@@ -299,10 +307,11 @@ contains
     if (associated(self%g)) then
       call dlsodar(f, self%neq, y, t, tout, itol, rtol, atol, itask, &
                    self%istate, iopt, self%rwork, self%lrw, self%iwork, self%liw, jac, self%jt, &
-                   g, self%ng, self%jroot)
+                   g, self%ng, self%jroot, self%common_data)
     else
       call dlsoda(f, self%neq, y, t, tout, itol, rtol, atol, itask, &
-                  self%istate, iopt, self%rwork, self%lrw, self%iwork, self%liw, jac, self%jt)
+                  self%istate, iopt, self%rwork, self%lrw, self%iwork, self%liw, jac, self%jt, &
+                  self%common_data)
     endif
     istate = self%istate
 

@@ -172,7 +172,10 @@ C Store coefficients in ELCO and TESCO. --------------------------------
 C----------------------- END OF SUBROUTINE DCFODE ----------------------
       END
 *DECK DINTDY
-      SUBROUTINE DINTDY (T, K, YH, NYH, DKY, IFLAG)
+      SUBROUTINE DINTDY (T, K, YH, NYH, DKY, IFLAG, common_data)
+      use iso_c_binding, only: c_ptr, c_f_pointer, c_loc
+      use odepack_common
+      type(odepack_common_data), target, intent(inout) :: common_data
 C***BEGIN PROLOGUE  DINTDY
 C***SUBSIDIARY
 C***PURPOSE  Interpolate solution derivatives.
@@ -216,21 +219,105 @@ C**End
       INTEGER K, NYH, IFLAG
       DOUBLE PRECISION T, YH, DKY
       DIMENSION YH(NYH,*), DKY(*)
-      INTEGER IOWND, IOWNS,
+      INTEGER, pointer :: IOWND(:), IOWNS(:),
      1   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
      2   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
      3   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
-      DOUBLE PRECISION ROWNS,
+      DOUBLE PRECISION, pointer :: ROWNS(:),
      1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      COMMON /DLS001/ ROWNS(209),
-     1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND,
-     2   IOWND(6), IOWNS(6),
-     3   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
-     4   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
-     5   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
+C      COMMON /DLS001/ ROWNS(209),
+C     1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND,
+C     2   IOWND(6), IOWNS(6),
+C     3   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
+C     4   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
+C     5   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
       INTEGER I, IC, J, JB, JB2, JJ, JJ1, JP1
       DOUBLE PRECISION C, R, S, TP
       CHARACTER*80 MSG
+C
+C     Common block pointers
+      type(DLS001_type), pointer :: DLS001
+      type(c_ptr) :: tmp_ptr
+C-----------------------------------------------------------------------
+C This code associates variables with common data
+C-----------------------------------------------------------------------
+      DLS001 => common_data%DLS001
+
+      tmp_ptr = c_loc(DLS001%reals(1))
+      call c_f_pointer(tmp_ptr,ROWNS,[209])
+      tmp_ptr = c_loc(DLS001%reals(210))
+      call c_f_pointer(tmp_ptr,CCMAX)
+      tmp_ptr = c_loc(DLS001%reals(211))
+      call c_f_pointer(tmp_ptr,EL0)
+      tmp_ptr = c_loc(DLS001%reals(212))
+      call c_f_pointer(tmp_ptr,H)
+      tmp_ptr = c_loc(DLS001%reals(213))
+      call c_f_pointer(tmp_ptr,HMIN)
+      tmp_ptr = c_loc(DLS001%reals(214))
+      call c_f_pointer(tmp_ptr,HMXI)
+      tmp_ptr = c_loc(DLS001%reals(215))
+      call c_f_pointer(tmp_ptr,HU)
+      tmp_ptr = c_loc(DLS001%reals(216))
+      call c_f_pointer(tmp_ptr,RC)
+      tmp_ptr = c_loc(DLS001%reals(217))
+      call c_f_pointer(tmp_ptr,TN)
+      tmp_ptr = c_loc(DLS001%reals(218))
+      call c_f_pointer(tmp_ptr,UROUND)
+
+      tmp_ptr = c_loc(DLS001%ints(1))
+      call c_f_pointer(tmp_ptr,IOWND,[6])
+      tmp_ptr = c_loc(DLS001%ints(7))
+      call c_f_pointer(tmp_ptr,IOWNS,[6])
+      tmp_ptr = c_loc(DLS001%ints(13))
+      call c_f_pointer(tmp_ptr,ICF)
+      tmp_ptr = c_loc(DLS001%ints(14))
+      call c_f_pointer(tmp_ptr,IERPJ)
+      tmp_ptr = c_loc(DLS001%ints(15))
+      call c_f_pointer(tmp_ptr,IERSL)
+      tmp_ptr = c_loc(DLS001%ints(16))
+      call c_f_pointer(tmp_ptr,JCUR)
+      tmp_ptr = c_loc(DLS001%ints(17))
+      call c_f_pointer(tmp_ptr,JSTART)
+      tmp_ptr = c_loc(DLS001%ints(18))
+      call c_f_pointer(tmp_ptr,KFLAG)
+      tmp_ptr = c_loc(DLS001%ints(19))
+      call c_f_pointer(tmp_ptr,L)
+      tmp_ptr = c_loc(DLS001%ints(20))
+      call c_f_pointer(tmp_ptr,LYH)
+      tmp_ptr = c_loc(DLS001%ints(21))
+      call c_f_pointer(tmp_ptr,LEWT)
+      tmp_ptr = c_loc(DLS001%ints(22))
+      call c_f_pointer(tmp_ptr,LACOR)
+      tmp_ptr = c_loc(DLS001%ints(23))
+      call c_f_pointer(tmp_ptr,LSAVF)
+      tmp_ptr = c_loc(DLS001%ints(24))
+      call c_f_pointer(tmp_ptr,LWM)
+      tmp_ptr = c_loc(DLS001%ints(25))
+      call c_f_pointer(tmp_ptr,LIWM)
+      tmp_ptr = c_loc(DLS001%ints(26))
+      call c_f_pointer(tmp_ptr,METH)
+      tmp_ptr = c_loc(DLS001%ints(27))
+      call c_f_pointer(tmp_ptr,MITER)
+      tmp_ptr = c_loc(DLS001%ints(28))
+      call c_f_pointer(tmp_ptr,MAXORD)
+      tmp_ptr = c_loc(DLS001%ints(29))
+      call c_f_pointer(tmp_ptr,MAXCOR)
+      tmp_ptr = c_loc(DLS001%ints(30))
+      call c_f_pointer(tmp_ptr,MSBP)
+      tmp_ptr = c_loc(DLS001%ints(31))
+      call c_f_pointer(tmp_ptr,MXNCF)
+      tmp_ptr = c_loc(DLS001%ints(32))
+      call c_f_pointer(tmp_ptr,N)
+      tmp_ptr = c_loc(DLS001%ints(33))
+      call c_f_pointer(tmp_ptr,NQ)
+      tmp_ptr = c_loc(DLS001%ints(34))
+      call c_f_pointer(tmp_ptr,NST)
+      tmp_ptr = c_loc(DLS001%ints(35))
+      call c_f_pointer(tmp_ptr,NFE)
+      tmp_ptr = c_loc(DLS001%ints(36))
+      call c_f_pointer(tmp_ptr,NJE)
+      tmp_ptr = c_loc(DLS001%ints(37))
+      call c_f_pointer(tmp_ptr,NQU)
 C
 C***FIRST EXECUTABLE STATEMENT  DINTDY
       IFLAG = 0
@@ -280,7 +367,10 @@ C
 C----------------------- END OF SUBROUTINE DINTDY ----------------------
       END
 *DECK DSOLSY
-      SUBROUTINE DSOLSY (WM, IWM, X, TEM)
+      SUBROUTINE DSOLSY (WM, IWM, X, TEM, common_data)
+      use iso_c_binding, only: c_ptr, c_f_pointer, c_loc
+      use odepack_common
+      type(odepack_common_data), target, intent(inout) :: common_data
 C***BEGIN PROLOGUE  DSOLSY
 C***SUBSIDIARY
 C***PURPOSE  ODEPACK linear system solver.
@@ -327,20 +417,103 @@ C**End
       INTEGER IWM
       DOUBLE PRECISION WM, X, TEM
       DIMENSION WM(*), IWM(*), X(*), TEM(*)
-      INTEGER IOWND, IOWNS,
+      INTEGER, pointer :: IOWND(:), IOWNS(:),
      1   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
      2   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
      3   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
-      DOUBLE PRECISION ROWNS,
+      DOUBLE PRECISION, pointer :: ROWNS(:),
      1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      COMMON /DLS001/ ROWNS(209),
-     1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND,
-     2   IOWND(6), IOWNS(6),
-     3   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
-     4   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
-     5   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
+C      COMMON /DLS001/ ROWNS(209),
+C     1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND,
+C     2   IOWND(6), IOWNS(6),
+C     3   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
+C     4   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
+C     5   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
       INTEGER I, MEBAND, ML, MU
       DOUBLE PRECISION DI, HL0, PHL0, R
+C     Common block pointers
+      type(DLS001_type), pointer :: DLS001
+      type(c_ptr) :: tmp_ptr
+C-----------------------------------------------------------------------
+C This code associates variables with common data
+C-----------------------------------------------------------------------
+      DLS001 => common_data%DLS001
+
+      tmp_ptr = c_loc(DLS001%reals(1))
+      call c_f_pointer(tmp_ptr,ROWNS,[209])
+      tmp_ptr = c_loc(DLS001%reals(210))
+      call c_f_pointer(tmp_ptr,CCMAX)
+      tmp_ptr = c_loc(DLS001%reals(211))
+      call c_f_pointer(tmp_ptr,EL0)
+      tmp_ptr = c_loc(DLS001%reals(212))
+      call c_f_pointer(tmp_ptr,H)
+      tmp_ptr = c_loc(DLS001%reals(213))
+      call c_f_pointer(tmp_ptr,HMIN)
+      tmp_ptr = c_loc(DLS001%reals(214))
+      call c_f_pointer(tmp_ptr,HMXI)
+      tmp_ptr = c_loc(DLS001%reals(215))
+      call c_f_pointer(tmp_ptr,HU)
+      tmp_ptr = c_loc(DLS001%reals(216))
+      call c_f_pointer(tmp_ptr,RC)
+      tmp_ptr = c_loc(DLS001%reals(217))
+      call c_f_pointer(tmp_ptr,TN)
+      tmp_ptr = c_loc(DLS001%reals(218))
+      call c_f_pointer(tmp_ptr,UROUND)
+
+      tmp_ptr = c_loc(DLS001%ints(1))
+      call c_f_pointer(tmp_ptr,IOWND,[6])
+      tmp_ptr = c_loc(DLS001%ints(7))
+      call c_f_pointer(tmp_ptr,IOWNS,[6])
+      tmp_ptr = c_loc(DLS001%ints(13))
+      call c_f_pointer(tmp_ptr,ICF)
+      tmp_ptr = c_loc(DLS001%ints(14))
+      call c_f_pointer(tmp_ptr,IERPJ)
+      tmp_ptr = c_loc(DLS001%ints(15))
+      call c_f_pointer(tmp_ptr,IERSL)
+      tmp_ptr = c_loc(DLS001%ints(16))
+      call c_f_pointer(tmp_ptr,JCUR)
+      tmp_ptr = c_loc(DLS001%ints(17))
+      call c_f_pointer(tmp_ptr,JSTART)
+      tmp_ptr = c_loc(DLS001%ints(18))
+      call c_f_pointer(tmp_ptr,KFLAG)
+      tmp_ptr = c_loc(DLS001%ints(19))
+      call c_f_pointer(tmp_ptr,L)
+      tmp_ptr = c_loc(DLS001%ints(20))
+      call c_f_pointer(tmp_ptr,LYH)
+      tmp_ptr = c_loc(DLS001%ints(21))
+      call c_f_pointer(tmp_ptr,LEWT)
+      tmp_ptr = c_loc(DLS001%ints(22))
+      call c_f_pointer(tmp_ptr,LACOR)
+      tmp_ptr = c_loc(DLS001%ints(23))
+      call c_f_pointer(tmp_ptr,LSAVF)
+      tmp_ptr = c_loc(DLS001%ints(24))
+      call c_f_pointer(tmp_ptr,LWM)
+      tmp_ptr = c_loc(DLS001%ints(25))
+      call c_f_pointer(tmp_ptr,LIWM)
+      tmp_ptr = c_loc(DLS001%ints(26))
+      call c_f_pointer(tmp_ptr,METH)
+      tmp_ptr = c_loc(DLS001%ints(27))
+      call c_f_pointer(tmp_ptr,MITER)
+      tmp_ptr = c_loc(DLS001%ints(28))
+      call c_f_pointer(tmp_ptr,MAXORD)
+      tmp_ptr = c_loc(DLS001%ints(29))
+      call c_f_pointer(tmp_ptr,MAXCOR)
+      tmp_ptr = c_loc(DLS001%ints(30))
+      call c_f_pointer(tmp_ptr,MSBP)
+      tmp_ptr = c_loc(DLS001%ints(31))
+      call c_f_pointer(tmp_ptr,MXNCF)
+      tmp_ptr = c_loc(DLS001%ints(32))
+      call c_f_pointer(tmp_ptr,N)
+      tmp_ptr = c_loc(DLS001%ints(33))
+      call c_f_pointer(tmp_ptr,NQ)
+      tmp_ptr = c_loc(DLS001%ints(34))
+      call c_f_pointer(tmp_ptr,NST)
+      tmp_ptr = c_loc(DLS001%ints(35))
+      call c_f_pointer(tmp_ptr,NFE)
+      tmp_ptr = c_loc(DLS001%ints(36))
+      call c_f_pointer(tmp_ptr,NJE)
+      tmp_ptr = c_loc(DLS001%ints(37))
+      call c_f_pointer(tmp_ptr,NQU)
 C
 C***FIRST EXECUTABLE STATEMENT  DSOLSY
       IERSL = 0
@@ -420,31 +593,38 @@ C----------------------- END OF SUBROUTINE DEWSET ----------------------
       END
 *DECK DSTODA
       SUBROUTINE DSTODA (NEQ, Y, YH, NYH, YH1, EWT, SAVF, ACOR,
-     1   WM, IWM, F, JAC, PJAC, SLVS)
+     1   WM, IWM, F, JAC, PJAC, SLVS, common_data)
+      use iso_c_binding, only: c_ptr, c_f_pointer, c_loc
+      use odepack_common
+      type(odepack_common_data), target, intent(inout) :: common_data
       EXTERNAL F, JAC, PJAC, SLVS
       INTEGER NEQ, NYH, IWM
       DOUBLE PRECISION Y, YH, YH1, EWT, SAVF, ACOR, WM
       DIMENSION NEQ(*), Y(*), YH(NYH,*), YH1(*), EWT(*), SAVF(*),
      1   ACOR(*), WM(*), IWM(*)
-      INTEGER IOWND, IALTH, IPUP, LMAX, MEO, NQNYH, NSLP,
+      INTEGER, pointer ::
+     1   IOWND(:), IALTH, IPUP, LMAX, MEO, NQNYH, NSLP,
      1   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
      2   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
      3   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
-      INTEGER IOWND2, ICOUNT, IRFLAG, JTYP, MUSED, MXORDN, MXORDS
-      DOUBLE PRECISION CONIT, CRATE, EL, ELCO, HOLD, RMAX, TESCO,
+      INTEGER, pointer ::
+     1   IOWND2(:), ICOUNT, IRFLAG, JTYP, MUSED, MXORDN, MXORDS
+      DOUBLE PRECISION, pointer ::
+     1   CONIT, CRATE, EL(:), ELCO(:,:), HOLD, RMAX, TESCO(:,:),
      2   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      DOUBLE PRECISION ROWND2, CM1, CM2, PDEST, PDLAST, RATIO,
+      DOUBLE PRECISION, pointer ::
+     1   ROWND2, CM1(:), CM2(:), PDEST, PDLAST, RATIO,
      1   PDNORM
-      COMMON /DLS001/ CONIT, CRATE, EL(13), ELCO(13,12),
-     1   HOLD, RMAX, TESCO(3,12),
-     2   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND,
-     3   IOWND(6), IALTH, IPUP, LMAX, MEO, NQNYH, NSLP,
-     4   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
-     5   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
-     6   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
-      COMMON /DLSA01/ ROWND2, CM1(12), CM2(5), PDEST, PDLAST, RATIO,
-     1   PDNORM,
-     2   IOWND2(3), ICOUNT, IRFLAG, JTYP, MUSED, MXORDN, MXORDS
+C      COMMON /DLS001/ CONIT, CRATE, EL(13), ELCO(13,12),
+C     1   HOLD, RMAX, TESCO(3,12),
+C     2   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND,
+C     3   IOWND(6), IALTH, IPUP, LMAX, MEO, NQNYH, NSLP,
+C     4   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
+C     5   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
+C     6   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
+C      COMMON /DLSA01/ ROWND2, CM1(12), CM2(5), PDEST, PDLAST, RATIO,
+C     1   PDNORM,
+C     2   IOWND2(3), ICOUNT, IRFLAG, JTYP, MUSED, MXORDN, MXORDS
       INTEGER I, I1, IREDO, IRET, J, JB, M, NCF, NEWQ
       INTEGER LM1, LM1P1, LM2, LM2P1, NQM1, NQM2
       DOUBLE PRECISION DCON, DDN, DEL, DELP, DSM, DUP, EXDN, EXSM, EXUP,
@@ -534,6 +714,147 @@ C          except to load MITER following a method switch.)
 C          MITER may be reset by DSTODA.
 C N      = the number of first-order differential equations.
 C-----------------------------------------------------------------------
+C     Common block pointers
+      type(DLS001_type), pointer :: DLS001
+      type(DLSA01_type), pointer :: DLSA01
+      type(c_ptr) :: tmp_ptr
+C-----------------------------------------------------------------------
+C This code associates variables with common data
+C-----------------------------------------------------------------------
+      DLS001 => common_data%DLS001
+
+      tmp_ptr = c_loc(DLS001%reals(1))
+      call c_f_pointer(tmp_ptr,CONIT)
+      tmp_ptr = c_loc(DLS001%reals(2))
+      call c_f_pointer(tmp_ptr,CRATE)
+      tmp_ptr = c_loc(DLS001%reals(3))
+      call c_f_pointer(tmp_ptr,EL,[13])
+      tmp_ptr = c_loc(DLS001%reals(16))
+      call c_f_pointer(tmp_ptr,ELCO,[13,12])
+      tmp_ptr = c_loc(DLS001%reals(172))
+      call c_f_pointer(tmp_ptr,HOLD)
+      tmp_ptr = c_loc(DLS001%reals(173))
+      call c_f_pointer(tmp_ptr,RMAX)
+      tmp_ptr = c_loc(DLS001%reals(174))
+      call c_f_pointer(tmp_ptr,TESCO,[3,12])
+      tmp_ptr = c_loc(DLS001%reals(210))
+      call c_f_pointer(tmp_ptr,CCMAX)
+      tmp_ptr = c_loc(DLS001%reals(211))
+      call c_f_pointer(tmp_ptr,EL0)
+      tmp_ptr = c_loc(DLS001%reals(212))
+      call c_f_pointer(tmp_ptr,H)
+      tmp_ptr = c_loc(DLS001%reals(213))
+      call c_f_pointer(tmp_ptr,HMIN)
+      tmp_ptr = c_loc(DLS001%reals(214))
+      call c_f_pointer(tmp_ptr,HMXI)
+      tmp_ptr = c_loc(DLS001%reals(215))
+      call c_f_pointer(tmp_ptr,HU)
+      tmp_ptr = c_loc(DLS001%reals(216))
+      call c_f_pointer(tmp_ptr,RC)
+      tmp_ptr = c_loc(DLS001%reals(217))
+      call c_f_pointer(tmp_ptr,TN)
+      tmp_ptr = c_loc(DLS001%reals(218))
+      call c_f_pointer(tmp_ptr,UROUND)
+
+      tmp_ptr = c_loc(DLS001%ints(1))
+      call c_f_pointer(tmp_ptr,IOWND,[6])
+      tmp_ptr = c_loc(DLS001%ints(7))
+      call c_f_pointer(tmp_ptr,IALTH)
+      tmp_ptr = c_loc(DLS001%ints(8))
+      call c_f_pointer(tmp_ptr,IPUP)
+      tmp_ptr = c_loc(DLS001%ints(9))
+      call c_f_pointer(tmp_ptr,LMAX)
+      tmp_ptr = c_loc(DLS001%ints(10))
+      call c_f_pointer(tmp_ptr,MEO)
+      tmp_ptr = c_loc(DLS001%ints(11))
+      call c_f_pointer(tmp_ptr,NQNYH)
+      tmp_ptr = c_loc(DLS001%ints(12))
+      call c_f_pointer(tmp_ptr,NSLP)
+      tmp_ptr = c_loc(DLS001%ints(13))
+      call c_f_pointer(tmp_ptr,ICF)
+      tmp_ptr = c_loc(DLS001%ints(14))
+      call c_f_pointer(tmp_ptr,IERPJ)
+      tmp_ptr = c_loc(DLS001%ints(15))
+      call c_f_pointer(tmp_ptr,IERSL)
+      tmp_ptr = c_loc(DLS001%ints(16))
+      call c_f_pointer(tmp_ptr,JCUR)
+      tmp_ptr = c_loc(DLS001%ints(17))
+      call c_f_pointer(tmp_ptr,JSTART)
+      tmp_ptr = c_loc(DLS001%ints(18))
+      call c_f_pointer(tmp_ptr,KFLAG)
+      tmp_ptr = c_loc(DLS001%ints(19))
+      call c_f_pointer(tmp_ptr,L)
+      tmp_ptr = c_loc(DLS001%ints(20))
+      call c_f_pointer(tmp_ptr,LYH)
+      tmp_ptr = c_loc(DLS001%ints(21))
+      call c_f_pointer(tmp_ptr,LEWT)
+      tmp_ptr = c_loc(DLS001%ints(22))
+      call c_f_pointer(tmp_ptr,LACOR)
+      tmp_ptr = c_loc(DLS001%ints(23))
+      call c_f_pointer(tmp_ptr,LSAVF)
+      tmp_ptr = c_loc(DLS001%ints(24))
+      call c_f_pointer(tmp_ptr,LWM)
+      tmp_ptr = c_loc(DLS001%ints(25))
+      call c_f_pointer(tmp_ptr,LIWM)
+      tmp_ptr = c_loc(DLS001%ints(26))
+      call c_f_pointer(tmp_ptr,METH)
+      tmp_ptr = c_loc(DLS001%ints(27))
+      call c_f_pointer(tmp_ptr,MITER)
+      tmp_ptr = c_loc(DLS001%ints(28))
+      call c_f_pointer(tmp_ptr,MAXORD)
+      tmp_ptr = c_loc(DLS001%ints(29))
+      call c_f_pointer(tmp_ptr,MAXCOR)
+      tmp_ptr = c_loc(DLS001%ints(30))
+      call c_f_pointer(tmp_ptr,MSBP)
+      tmp_ptr = c_loc(DLS001%ints(31))
+      call c_f_pointer(tmp_ptr,MXNCF)
+      tmp_ptr = c_loc(DLS001%ints(32))
+      call c_f_pointer(tmp_ptr,N)
+      tmp_ptr = c_loc(DLS001%ints(33))
+      call c_f_pointer(tmp_ptr,NQ)
+      tmp_ptr = c_loc(DLS001%ints(34))
+      call c_f_pointer(tmp_ptr,NST)
+      tmp_ptr = c_loc(DLS001%ints(35))
+      call c_f_pointer(tmp_ptr,NFE)
+      tmp_ptr = c_loc(DLS001%ints(36))
+      call c_f_pointer(tmp_ptr,NJE)
+      tmp_ptr = c_loc(DLS001%ints(37))
+      call c_f_pointer(tmp_ptr,NQU)
+      
+      DLSA01 => common_data%DLSA01
+
+      tmp_ptr = c_loc(DLSA01%reals(1))
+      call c_f_pointer(tmp_ptr,ROWND2)
+      tmp_ptr = c_loc(DLSA01%reals(2))
+      call c_f_pointer(tmp_ptr,CM1,[12])
+
+      tmp_ptr = c_loc(DLSA01%reals(14))
+      call c_f_pointer(tmp_ptr,CM2,[5])
+      tmp_ptr = c_loc(DLSA01%reals(19))
+      call c_f_pointer(tmp_ptr,PDEST)
+      tmp_ptr = c_loc(DLSA01%reals(20))
+      call c_f_pointer(tmp_ptr,PDLAST)
+      tmp_ptr = c_loc(DLSA01%reals(21))
+      call c_f_pointer(tmp_ptr,RATIO)
+      tmp_ptr = c_loc(DLSA01%reals(22))
+      call c_f_pointer(tmp_ptr,PDNORM)
+
+      tmp_ptr = c_loc(DLSA01%ints(1))
+      call c_f_pointer(tmp_ptr,IOWND2,[3])
+      tmp_ptr = c_loc(DLSA01%ints(4))
+      call c_f_pointer(tmp_ptr,ICOUNT)
+      tmp_ptr = c_loc(DLSA01%ints(5))
+      call c_f_pointer(tmp_ptr,IRFLAG)
+      tmp_ptr = c_loc(DLSA01%ints(6))
+      call c_f_pointer(tmp_ptr,JTYP)
+      tmp_ptr = c_loc(DLSA01%ints(7))
+      call c_f_pointer(tmp_ptr,MUSED)
+      tmp_ptr = c_loc(DLSA01%ints(8))
+      call c_f_pointer(tmp_ptr,MXORDN)
+      tmp_ptr = c_loc(DLSA01%ints(9))
+      call c_f_pointer(tmp_ptr,MXORDS)
+
+C
       KFLAG = 0
       TOLD = TN
       NCF = 0
@@ -681,7 +1002,8 @@ C If indicated, the matrix P = I - H*EL(1)*J is reevaluated and
 C preprocessed before starting the corrector iteration.  IPUP is set
 C to 0 as an indicator that this has been done.
 C-----------------------------------------------------------------------
-      CALL PJAC (NEQ, Y, YH, NYH, EWT, ACOR, SAVF, WM, IWM, F, JAC)
+      CALL PJAC (NEQ, Y, YH, NYH, EWT, ACOR, SAVF, WM, IWM, F, JAC,
+     1           common_data)
       IPUP = 0
       RC = 1.0D0
       NSLP = NST
@@ -709,7 +1031,7 @@ C P as coefficient matrix.
 C-----------------------------------------------------------------------
  350  DO 360 I = 1,N
  360    Y(I) = H*SAVF(I) - (YH(I,2) + ACOR(I))
-      CALL SLVS (WM, IWM, Y, SAVF)
+      CALL SLVS (WM, IWM, Y, SAVF, common_data)
       IF (IERSL .LT. 0) GO TO 430
       IF (IERSL .GT. 0) GO TO 410
       DEL = DMNORM (N, Y, EWT)
@@ -1053,28 +1375,32 @@ C----------------------- End of Subroutine DSTODA ----------------------
       END
 *DECK DPRJA
       SUBROUTINE DPRJA (NEQ, Y, YH, NYH, EWT, FTEM, SAVF, WM, IWM,
-     1   F, JAC)
+     1   F, JAC, common_data)
+      use iso_c_binding, only: c_ptr, c_f_pointer, c_loc
+      use odepack_common
+      type(odepack_common_data), target, intent(inout) :: common_data
       EXTERNAL F, JAC
       INTEGER NEQ, NYH, IWM
       DOUBLE PRECISION Y, YH, EWT, FTEM, SAVF, WM
       DIMENSION NEQ(*), Y(*), YH(NYH,*), EWT(*), FTEM(*), SAVF(*),
      1   WM(*), IWM(*)
-      INTEGER IOWND, IOWNS,
+      INTEGER, pointer :: IOWND(:), IOWNS(:),
      1   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
      2   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
      3   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
-      INTEGER IOWND2, IOWNS2, JTYP, MUSED, MXORDN, MXORDS
-      DOUBLE PRECISION ROWNS,
+      INTEGER, pointer :: 
+     1   IOWND2(:), IOWNS2(:), JTYP, MUSED, MXORDN, MXORDS
+      DOUBLE PRECISION, pointer :: ROWNS(:),
      1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      DOUBLE PRECISION ROWND2, ROWNS2, PDNORM
-      COMMON /DLS001/ ROWNS(209),
-     1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND,
-     2   IOWND(6), IOWNS(6),
-     3   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
-     4   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
-     5   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
-      COMMON /DLSA01/ ROWND2, ROWNS2(20), PDNORM,
-     1   IOWND2(3), IOWNS2(2), JTYP, MUSED, MXORDN, MXORDS
+      DOUBLE PRECISION, pointer :: ROWND2, ROWNS2(:), PDNORM
+C      COMMON /DLS001/ ROWNS(209),
+C     1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND,
+C     2   IOWND(6), IOWNS(6),
+C     3   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
+C     4   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
+C     5   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
+C      COMMON /DLSA01/ ROWND2, ROWNS2(20), PDNORM,
+C     1   IOWND2(3), IOWNS2(2), JTYP, MUSED, MXORDN, MXORDS
       INTEGER I, I1, I2, IER, II, J, J1, JJ, LENP,
      1   MBA, MBAND, MEB1, MEBAND, ML, ML3, MU, NP1
       DOUBLE PRECISION CON, FAC, HL0, R, R0, SRUR, YI, YJ, YJJ,
@@ -1113,6 +1439,113 @@ C         (or approximation) is now current.
 C This routine also uses the Common variables EL0, H, TN, UROUND,
 C MITER, N, NFE, and NJE.
 C-----------------------------------------------------------------------
+C     Common block pointers
+      type(DLS001_type), pointer :: DLS001
+      type(DLSA01_type), pointer :: DLSA01
+      type(c_ptr) :: tmp_ptr
+C-----------------------------------------------------------------------
+C This code associates variables with common data
+C-----------------------------------------------------------------------
+      DLS001 => common_data%DLS001
+
+      tmp_ptr = c_loc(DLS001%reals(1))
+      call c_f_pointer(tmp_ptr,ROWNS,[209])
+      tmp_ptr = c_loc(DLS001%reals(210))
+      call c_f_pointer(tmp_ptr,CCMAX)
+      tmp_ptr = c_loc(DLS001%reals(211))
+      call c_f_pointer(tmp_ptr,EL0)
+      tmp_ptr = c_loc(DLS001%reals(212))
+      call c_f_pointer(tmp_ptr,H)
+      tmp_ptr = c_loc(DLS001%reals(213))
+      call c_f_pointer(tmp_ptr,HMIN)
+      tmp_ptr = c_loc(DLS001%reals(214))
+      call c_f_pointer(tmp_ptr,HMXI)
+      tmp_ptr = c_loc(DLS001%reals(215))
+      call c_f_pointer(tmp_ptr,HU)
+      tmp_ptr = c_loc(DLS001%reals(216))
+      call c_f_pointer(tmp_ptr,RC)
+      tmp_ptr = c_loc(DLS001%reals(217))
+      call c_f_pointer(tmp_ptr,TN)
+      tmp_ptr = c_loc(DLS001%reals(218))
+      call c_f_pointer(tmp_ptr,UROUND)
+
+      tmp_ptr = c_loc(DLS001%ints(1))
+      call c_f_pointer(tmp_ptr,IOWND,[6])
+      tmp_ptr = c_loc(DLS001%ints(7))
+      call c_f_pointer(tmp_ptr,IOWNS,[6])
+      tmp_ptr = c_loc(DLS001%ints(13))
+      call c_f_pointer(tmp_ptr,ICF)
+      tmp_ptr = c_loc(DLS001%ints(14))
+      call c_f_pointer(tmp_ptr,IERPJ)
+      tmp_ptr = c_loc(DLS001%ints(15))
+      call c_f_pointer(tmp_ptr,IERSL)
+      tmp_ptr = c_loc(DLS001%ints(16))
+      call c_f_pointer(tmp_ptr,JCUR)
+      tmp_ptr = c_loc(DLS001%ints(17))
+      call c_f_pointer(tmp_ptr,JSTART)
+      tmp_ptr = c_loc(DLS001%ints(18))
+      call c_f_pointer(tmp_ptr,KFLAG)
+      tmp_ptr = c_loc(DLS001%ints(19))
+      call c_f_pointer(tmp_ptr,L)
+      tmp_ptr = c_loc(DLS001%ints(20))
+      call c_f_pointer(tmp_ptr,LYH)
+      tmp_ptr = c_loc(DLS001%ints(21))
+      call c_f_pointer(tmp_ptr,LEWT)
+      tmp_ptr = c_loc(DLS001%ints(22))
+      call c_f_pointer(tmp_ptr,LACOR)
+      tmp_ptr = c_loc(DLS001%ints(23))
+      call c_f_pointer(tmp_ptr,LSAVF)
+      tmp_ptr = c_loc(DLS001%ints(24))
+      call c_f_pointer(tmp_ptr,LWM)
+      tmp_ptr = c_loc(DLS001%ints(25))
+      call c_f_pointer(tmp_ptr,LIWM)
+      tmp_ptr = c_loc(DLS001%ints(26))
+      call c_f_pointer(tmp_ptr,METH)
+      tmp_ptr = c_loc(DLS001%ints(27))
+      call c_f_pointer(tmp_ptr,MITER)
+      tmp_ptr = c_loc(DLS001%ints(28))
+      call c_f_pointer(tmp_ptr,MAXORD)
+      tmp_ptr = c_loc(DLS001%ints(29))
+      call c_f_pointer(tmp_ptr,MAXCOR)
+      tmp_ptr = c_loc(DLS001%ints(30))
+      call c_f_pointer(tmp_ptr,MSBP)
+      tmp_ptr = c_loc(DLS001%ints(31))
+      call c_f_pointer(tmp_ptr,MXNCF)
+      tmp_ptr = c_loc(DLS001%ints(32))
+      call c_f_pointer(tmp_ptr,N)
+      tmp_ptr = c_loc(DLS001%ints(33))
+      call c_f_pointer(tmp_ptr,NQ)
+      tmp_ptr = c_loc(DLS001%ints(34))
+      call c_f_pointer(tmp_ptr,NST)
+      tmp_ptr = c_loc(DLS001%ints(35))
+      call c_f_pointer(tmp_ptr,NFE)
+      tmp_ptr = c_loc(DLS001%ints(36))
+      call c_f_pointer(tmp_ptr,NJE)
+      tmp_ptr = c_loc(DLS001%ints(37))
+      call c_f_pointer(tmp_ptr,NQU)
+
+      DLSA01 => common_data%DLSA01
+
+      tmp_ptr = c_loc(DLSA01%reals(1))
+      call c_f_pointer(tmp_ptr,ROWND2)
+      tmp_ptr = c_loc(DLSA01%reals(2))
+      call c_f_pointer(tmp_ptr,ROWNS2,[20])
+      tmp_ptr = c_loc(DLSA01%reals(22))
+      call c_f_pointer(tmp_ptr,PDNORM)
+
+      tmp_ptr = c_loc(DLSA01%ints(1))
+      call c_f_pointer(tmp_ptr,IOWND2,[3])
+      tmp_ptr = c_loc(DLSA01%ints(4))
+      call c_f_pointer(tmp_ptr,IOWNS2,[2])
+      tmp_ptr = c_loc(DLSA01%ints(6))
+      call c_f_pointer(tmp_ptr,JTYP)
+      tmp_ptr = c_loc(DLSA01%ints(7))
+      call c_f_pointer(tmp_ptr,MUSED)
+      tmp_ptr = c_loc(DLSA01%ints(8))
+      call c_f_pointer(tmp_ptr,MXORDN)
+      tmp_ptr = c_loc(DLSA01%ints(9))
+      call c_f_pointer(tmp_ptr,MXORDS)
+C
       NJE = NJE + 1
       IERPJ = 0
       JCUR = 1
@@ -1289,7 +1722,10 @@ C-----------------------------------------------------------------------
 C----------------------- End of Function DBNORM ------------------------
       END
 *DECK DSRCMA
-      SUBROUTINE DSRCMA (RSAV, ISAV, JOB)
+      SUBROUTINE DSRCMA (RSAV, ISAV, JOB, common_data)
+      use iso_c_binding, only: c_ptr, c_f_pointer, c_loc
+      use odepack_common
+      type(odepack_common_data), target, intent(inout) :: common_data
 C-----------------------------------------------------------------------
 C This routine saves or restores (depending on JOB) the contents of
 C the Common blocks DLS001, DLSA01, which are used
@@ -1303,15 +1739,38 @@ C        JOB  = 2 if Common is to be restored (read from RSAV/ISAV)
 C        A call with JOB = 2 presumes a prior call with JOB = 1.
 C-----------------------------------------------------------------------
       INTEGER ISAV, JOB
-      INTEGER ILS, ILSA
+      INTEGER, pointer :: ILS(:), ILSA(:)
       INTEGER I, LENRLS, LENILS, LENRLA, LENILA
       DOUBLE PRECISION RSAV
-      DOUBLE PRECISION RLS, RLSA
+      DOUBLE PRECISION, pointer :: RLS(:), RLSA(:)
       DIMENSION RSAV(*), ISAV(*)
       SAVE LENRLS, LENILS, LENRLA, LENILA
-      COMMON /DLS001/ RLS(218), ILS(37)
-      COMMON /DLSA01/ RLSA(22), ILSA(9)
+C      COMMON /DLS001/ RLS(218), ILS(37)
+C      COMMON /DLSA01/ RLSA(22), ILSA(9)
       DATA LENRLS/218/, LENILS/37/, LENRLA/22/, LENILA/9/
+C     Common block pointers
+      type(DLS001_type), pointer :: DLS001
+      type(DLSA01_type), pointer :: DLSA01
+      type(c_ptr) :: tmp_ptr
+C-----------------------------------------------------------------------
+C This code associates variables with common data
+C-----------------------------------------------------------------------
+      DLS001 => common_data%DLS001
+
+      tmp_ptr = c_loc(DLS001%reals(1))
+      call c_f_pointer(tmp_ptr,RLS,[218])
+
+      tmp_ptr = c_loc(DLS001%ints(1))
+      call c_f_pointer(tmp_ptr,ILS,[37])
+
+      DLSA01 => common_data%DLSA01
+
+      tmp_ptr = c_loc(DLSA01%reals(1))
+      call c_f_pointer(tmp_ptr,RLSA,[22])
+
+      tmp_ptr = c_loc(DLSA01%ints(1))
+      call c_f_pointer(tmp_ptr,ILSA,[9])
+      
 C
       IF (JOB .EQ. 2) GO TO 100
       DO 10 I = 1,LENRLS
@@ -1341,27 +1800,33 @@ C
 C----------------------- End of Subroutine DSRCMA ----------------------
       END
 *DECK DRCHEK
-      SUBROUTINE DRCHEK (JOB, G, NEQ, Y, YH,NYH, G0, G1, GX, JROOT, IRT)
+      SUBROUTINE DRCHEK (JOB, G, NEQ, Y, YH,NYH, G0, G1, GX, JROOT, IRT,
+     1                   common_data)
+      use iso_c_binding, only: c_ptr, c_f_pointer, c_loc
+      use odepack_interface, only: DINTDY, DROOTS
+      use odepack_common
+      type(odepack_common_data), target, intent(inout) :: common_data
       EXTERNAL G
       INTEGER JOB, NEQ, NYH, JROOT, IRT
       DOUBLE PRECISION Y, YH, G0, G1, GX
       DIMENSION NEQ(*), Y(*), YH(NYH,*), G0(*), G1(*), GX(*), JROOT(*)
-      INTEGER IOWND, IOWNS,
+      INTEGER, pointer :: IOWND(:), IOWNS(:),
      1   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
      2   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
      3   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
-      INTEGER IOWND3, IOWNR3, IRFND, ITASKC, NGC, NGE
-      DOUBLE PRECISION ROWNS,
+      INTEGER, pointer :: IOWND3(:), IOWNR3(:), IRFND, ITASKC, NGC,
+     1   NGE
+      DOUBLE PRECISION, pointer :: ROWNS(:),
      1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-      DOUBLE PRECISION ROWNR3, T0, TLAST, TOUTC
-      COMMON /DLS001/ ROWNS(209),
-     1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND,
-     2   IOWND(6), IOWNS(6),
-     3   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
-     4   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
-     5   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
-      COMMON /DLSR01/ ROWNR3(2), T0, TLAST, TOUTC,
-     1   IOWND3(3), IOWNR3(2), IRFND, ITASKC, NGC, NGE
+      DOUBLE PRECISION, pointer :: ROWNR3(:), T0, TLAST, TOUTC
+C      COMMON /DLS001/ ROWNS(209),
+C     1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND,
+C     2   IOWND(6), IOWNS(6),
+C     3   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
+C     4   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
+C     5   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
+C      COMMON /DLSR01/ ROWNR3(2), T0, TLAST, TOUTC,
+C     1   IOWND3(3), IOWNR3(2), IRFND, ITASKC, NGC, NGE
       INTEGER I, IFLAG, JFLAG
       DOUBLE PRECISION HMING, T1, TEMP1, TEMP2, X
       LOGICAL ZROOT
@@ -1400,6 +1865,118 @@ C          IRFND = 1 if it did, = 0 if not.
 C ITASKC = copy of ITASK (input only).
 C NGC    = copy of NG (input only).
 C-----------------------------------------------------------------------
+C
+C     Common block pointers
+      type(DLS001_type), pointer :: DLS001
+      type(DLSR01_type), pointer :: DLSR01
+      type(c_ptr) :: tmp_ptr
+C-----------------------------------------------------------------------
+C This code associates variables with common data
+C-----------------------------------------------------------------------
+      DLS001 => common_data%DLS001
+
+      tmp_ptr = c_loc(DLS001%reals(1))
+      call c_f_pointer(tmp_ptr,ROWNS,[209])
+      tmp_ptr = c_loc(DLS001%reals(210))
+      call c_f_pointer(tmp_ptr,CCMAX)
+      tmp_ptr = c_loc(DLS001%reals(211))
+      call c_f_pointer(tmp_ptr,EL0)
+      tmp_ptr = c_loc(DLS001%reals(212))
+      call c_f_pointer(tmp_ptr,H)
+      tmp_ptr = c_loc(DLS001%reals(213))
+      call c_f_pointer(tmp_ptr,HMIN)
+      tmp_ptr = c_loc(DLS001%reals(214))
+      call c_f_pointer(tmp_ptr,HMXI)
+      tmp_ptr = c_loc(DLS001%reals(215))
+      call c_f_pointer(tmp_ptr,HU)
+      tmp_ptr = c_loc(DLS001%reals(216))
+      call c_f_pointer(tmp_ptr,RC)
+      tmp_ptr = c_loc(DLS001%reals(217))
+      call c_f_pointer(tmp_ptr,TN)
+      tmp_ptr = c_loc(DLS001%reals(218))
+      call c_f_pointer(tmp_ptr,UROUND)
+
+      tmp_ptr = c_loc(DLS001%ints(1))
+      call c_f_pointer(tmp_ptr,IOWND,[6])
+      tmp_ptr = c_loc(DLS001%ints(7))
+      call c_f_pointer(tmp_ptr,IOWNS,[6])
+      tmp_ptr = c_loc(DLS001%ints(13))
+      call c_f_pointer(tmp_ptr,ICF)
+      tmp_ptr = c_loc(DLS001%ints(14))
+      call c_f_pointer(tmp_ptr,IERPJ)
+      tmp_ptr = c_loc(DLS001%ints(15))
+      call c_f_pointer(tmp_ptr,IERSL)
+      tmp_ptr = c_loc(DLS001%ints(16))
+      call c_f_pointer(tmp_ptr,JCUR)
+      tmp_ptr = c_loc(DLS001%ints(17))
+      call c_f_pointer(tmp_ptr,JSTART)
+      tmp_ptr = c_loc(DLS001%ints(18))
+      call c_f_pointer(tmp_ptr,KFLAG)
+      tmp_ptr = c_loc(DLS001%ints(19))
+      call c_f_pointer(tmp_ptr,L)
+      tmp_ptr = c_loc(DLS001%ints(20))
+      call c_f_pointer(tmp_ptr,LYH)
+      tmp_ptr = c_loc(DLS001%ints(21))
+      call c_f_pointer(tmp_ptr,LEWT)
+      tmp_ptr = c_loc(DLS001%ints(22))
+      call c_f_pointer(tmp_ptr,LACOR)
+      tmp_ptr = c_loc(DLS001%ints(23))
+      call c_f_pointer(tmp_ptr,LSAVF)
+      tmp_ptr = c_loc(DLS001%ints(24))
+      call c_f_pointer(tmp_ptr,LWM)
+      tmp_ptr = c_loc(DLS001%ints(25))
+      call c_f_pointer(tmp_ptr,LIWM)
+      tmp_ptr = c_loc(DLS001%ints(26))
+      call c_f_pointer(tmp_ptr,METH)
+      tmp_ptr = c_loc(DLS001%ints(27))
+      call c_f_pointer(tmp_ptr,MITER)
+      tmp_ptr = c_loc(DLS001%ints(28))
+      call c_f_pointer(tmp_ptr,MAXORD)
+      tmp_ptr = c_loc(DLS001%ints(29))
+      call c_f_pointer(tmp_ptr,MAXCOR)
+      tmp_ptr = c_loc(DLS001%ints(30))
+      call c_f_pointer(tmp_ptr,MSBP)
+      tmp_ptr = c_loc(DLS001%ints(31))
+      call c_f_pointer(tmp_ptr,MXNCF)
+      tmp_ptr = c_loc(DLS001%ints(32))
+      call c_f_pointer(tmp_ptr,N)
+      tmp_ptr = c_loc(DLS001%ints(33))
+      call c_f_pointer(tmp_ptr,NQ)
+      tmp_ptr = c_loc(DLS001%ints(34))
+      call c_f_pointer(tmp_ptr,NST)
+      tmp_ptr = c_loc(DLS001%ints(35))
+      call c_f_pointer(tmp_ptr,NFE)
+      tmp_ptr = c_loc(DLS001%ints(36))
+      call c_f_pointer(tmp_ptr,NJE)
+      tmp_ptr = c_loc(DLS001%ints(37))
+      call c_f_pointer(tmp_ptr,NQU)
+
+      DLSR01 => common_data%DLSR01
+
+      tmp_ptr = c_loc(DLSR01%reals(1))
+      call c_f_pointer(tmp_ptr,ROWNR3,[2])
+      tmp_ptr = c_loc(DLSR01%reals(3))
+      call c_f_pointer(tmp_ptr,T0)
+      tmp_ptr = c_loc(DLSR01%reals(4))
+      call c_f_pointer(tmp_ptr,TLAST)
+      tmp_ptr = c_loc(DLSR01%reals(5))
+      call c_f_pointer(tmp_ptr,TOUTC)
+
+      tmp_ptr = c_loc(DLSR01%ints(1))
+      call c_f_pointer(tmp_ptr,IOWND3,[3])
+      tmp_ptr = c_loc(DLSR01%ints(4))
+      call c_f_pointer(tmp_ptr,IOWNR3,[2])
+      tmp_ptr = c_loc(DLSR01%ints(6))
+      call c_f_pointer(tmp_ptr,IRFND)
+      tmp_ptr = c_loc(DLSR01%ints(7))
+      call c_f_pointer(tmp_ptr,ITASKC)
+      tmp_ptr = c_loc(DLSR01%ints(8))
+      call c_f_pointer(tmp_ptr,NGC)
+      tmp_ptr = c_loc(DLSR01%ints(9))
+      call c_f_pointer(tmp_ptr,NGE)
+
+C
+C
       IRT = 0
       DO 10 I = 1,NGC
  10     JROOT(I) = 0
@@ -1439,7 +2016,7 @@ C
  200  CONTINUE
       IF (IRFND .EQ. 0) GO TO 260
 C If a root was found on the previous step, evaluate G0 = g(T0). -------
-      CALL DINTDY (T0, 0, YH, NYH, Y, IFLAG)
+      CALL DINTDY (T0, 0, YH, NYH, Y, IFLAG, common_data)
       CALL G (NEQ, T0, Y, NGC, G0)
       NGE = NGE + 1
       ZROOT = .FALSE.
@@ -1454,7 +2031,7 @@ C g has a zero at T0.  Look at g at T + (small increment). -------------
       DO 220 I = 1,N
  220    Y(I) = Y(I) + TEMP2*YH(I,2)
       GO TO 240
- 230  CALL DINTDY (T0, 0, YH, NYH, Y, IFLAG)
+ 230  CALL DINTDY (T0, 0, YH, NYH, Y, IFLAG, common_data)
  240  CALL G (NEQ, T0, Y, NGC, G0)
       NGE = NGE + 1
       ZROOT = .FALSE.
@@ -1476,7 +2053,7 @@ C Set T1 to TN or TOUTC, whichever comes first, and get g at T1. -------
       IF ((TOUTC - TN)*H .GE. 0.0D0) GO TO 310
       T1 = TOUTC
       IF ((T1 - T0)*H .LE. 0.0D0) GO TO 390
-      CALL DINTDY (T1, 0, YH, NYH, Y, IFLAG)
+      CALL DINTDY (T1, 0, YH, NYH, Y, IFLAG, common_data)
       GO TO 330
  310  T1 = TN
       DO 320 I = 1,N
@@ -1486,9 +2063,10 @@ C Set T1 to TN or TOUTC, whichever comes first, and get g at T1. -------
 C Call DROOTS to search for root in interval from T0 to T1. ------------
       JFLAG = 0
  350  CONTINUE
-      CALL DROOTS (NGC, HMING, JFLAG, T0, T1, G0, G1, GX, X, JROOT)
+      CALL DROOTS (NGC, HMING, JFLAG, T0, T1, G0, G1, GX, X, JROOT,
+     1             common_data)
       IF (JFLAG .GT. 1) GO TO 360
-      CALL DINTDY (X, 0, YH, NYH, Y, IFLAG)
+      CALL DINTDY (X, 0, YH, NYH, Y, IFLAG, common_data)
       CALL G (NEQ, X, Y, NGC, GX)
       NGE = NGE + 1
       GO TO 350
@@ -1496,7 +2074,7 @@ C Call DROOTS to search for root in interval from T0 to T1. ------------
       CALL DCOPY (NGC, GX, 1, G0, 1)
       IF (JFLAG .EQ. 4) GO TO 390
 C Found a root.  Interpolate to X and return. --------------------------
-      CALL DINTDY (X, 0, YH, NYH, Y, IFLAG)
+      CALL DINTDY (X, 0, YH, NYH, Y, IFLAG, common_data)
       IRT = 1
       RETURN
 C
@@ -1505,14 +2083,18 @@ C
 C----------------------- End of Subroutine DRCHEK ----------------------
       END
 *DECK DROOTS
-      SUBROUTINE DROOTS (NG, HMIN, JFLAG, X0, X1, G0, G1, GX, X, JROOT)
+      SUBROUTINE DROOTS (NG, HMIN, JFLAG, X0, X1, G0, G1, GX, X, JROOT,
+     1                   common_data)
+      use iso_c_binding, only: c_ptr, c_f_pointer, c_loc
+      use odepack_common
+      type(odepack_common_data), target, intent(inout) :: common_data
       INTEGER NG, JFLAG, JROOT
       DOUBLE PRECISION HMIN, X0, X1, G0, G1, GX, X
       DIMENSION G0(NG), G1(NG), GX(NG), JROOT(NG)
-      INTEGER IOWND3, IMAX, LAST, IDUM3
-      DOUBLE PRECISION ALPHA, X2, RDUM3
-      COMMON /DLSR01/ ALPHA, X2, RDUM3(3),
-     1   IOWND3(3), IMAX, LAST, IDUM3(4)
+      INTEGER, pointer :: IOWND3(:), IMAX, LAST, IDUM3(:)
+      DOUBLE PRECISION, pointer :: ALPHA, X2, RDUM3(:)
+C      COMMON /DLSR01/ ALPHA, X2, RDUM3(3),
+C     1   IOWND3(3), IMAX, LAST, IDUM3(4)
 C-----------------------------------------------------------------------
 C This subroutine finds the leftmost root of a set of arbitrary
 C functions gi(x) (i = 1,...,NG) in an interval (X0,X1).  Only roots
@@ -1591,6 +2173,30 @@ C-----------------------------------------------------------------------
       LOGICAL ZROOT, SGNCHG, XROOT
       SAVE ZERO, HALF, TENTH, FIVE
       DATA ZERO/0.0D0/, HALF/0.5D0/, TENTH/0.1D0/, FIVE/5.0D0/
+C     Common block pointers
+      type(DLSR01_type), pointer :: DLSR01
+      type(c_ptr) :: tmp_ptr
+C-----------------------------------------------------------------------
+C This code associates variables with common data
+C-----------------------------------------------------------------------
+      DLSR01 => common_data%DLSR01
+
+      tmp_ptr = c_loc(DLSR01%reals(1))
+      call c_f_pointer(tmp_ptr,ALPHA)
+      tmp_ptr = c_loc(DLSR01%reals(2))
+      call c_f_pointer(tmp_ptr,X2)
+      tmp_ptr = c_loc(DLSR01%reals(3))
+      call c_f_pointer(tmp_ptr,RDUM3,[3])
+
+      tmp_ptr = c_loc(DLSR01%ints(1))
+      call c_f_pointer(tmp_ptr,IOWND3,[3])
+      tmp_ptr = c_loc(DLSR01%ints(4))
+      call c_f_pointer(tmp_ptr,IMAX)
+      tmp_ptr = c_loc(DLSR01%ints(5))
+      call c_f_pointer(tmp_ptr,LAST)
+      tmp_ptr = c_loc(DLSR01%ints(6))
+      call c_f_pointer(tmp_ptr,IDUM3,[4])
+
 C
       IF (JFLAG .EQ. 1) GO TO 200
 C JFLAG .ne. 1.  Check for change in sign of g or zero at X1. ----------
@@ -1725,7 +2331,10 @@ C No sign changes in this interval.  Set X = X1, return JFLAG = 4. -----
 C----------------------- End of Subroutine DROOTS ----------------------
       END
 *DECK DSRCAR
-      SUBROUTINE DSRCAR (RSAV, ISAV, JOB)
+      SUBROUTINE DSRCAR (RSAV, ISAV, JOB, common_data)
+      use iso_c_binding, only: c_ptr, c_f_pointer, c_loc
+      use odepack_common
+      type(odepack_common_data), target, intent(inout) :: common_data
 C-----------------------------------------------------------------------
 C This routine saves or restores (depending on JOB) the contents of
 C the Common blocks DLS001, DLSA01, DLSR01, which are used
@@ -1739,17 +2348,49 @@ C        JOB  = 2 if Common is to be restored (read from RSAV/ISAV)
 C        A call with JOB = 2 presumes a prior call with JOB = 1.
 C-----------------------------------------------------------------------
       INTEGER ISAV, JOB
-      INTEGER ILS, ILSA, ILSR
+      INTEGER, pointer :: ILS(:), ILSA(:), ILSR(:)
       INTEGER I, IOFF, LENRLS, LENILS, LENRLA, LENILA, LENRLR, LENILR
       DOUBLE PRECISION RSAV
-      DOUBLE PRECISION RLS, RLSA, RLSR
+      DOUBLE PRECISION, pointer :: RLS(:), RLSA(:), RLSR(:)
       DIMENSION RSAV(*), ISAV(*)
       SAVE LENRLS, LENILS, LENRLA, LENILA, LENRLR, LENILR
-      COMMON /DLS001/ RLS(218), ILS(37)
-      COMMON /DLSA01/ RLSA(22), ILSA(9)
-      COMMON /DLSR01/ RLSR(5), ILSR(9)
+C      COMMON /DLS001/ RLS(218), ILS(37)
+C      COMMON /DLSA01/ RLSA(22), ILSA(9)
+C      COMMON /DLSR01/ RLSR(5), ILSR(9)
       DATA LENRLS/218/, LENILS/37/, LENRLA/22/, LENILA/9/
       DATA LENRLR/5/, LENILR/9/
+C     Common block pointers
+      type(DLS001_type), pointer :: DLS001
+      type(DLSA01_type), pointer :: DLSA01
+      type(DLSR01_type), pointer :: DLSR01
+      type(c_ptr) :: tmp_ptr
+C-----------------------------------------------------------------------
+C This code associates variables with common data
+C-----------------------------------------------------------------------
+      DLS001 => common_data%DLS001
+
+      tmp_ptr = c_loc(DLS001%reals(1))
+      call c_f_pointer(tmp_ptr,RLS,[218])
+
+      tmp_ptr = c_loc(DLS001%ints(1))
+      call c_f_pointer(tmp_ptr,ILS,[37])
+
+      DLSA01 => common_data%DLSA01
+
+      tmp_ptr = c_loc(DLSA01%reals(1))
+      call c_f_pointer(tmp_ptr,RLSA,[22])
+
+      tmp_ptr = c_loc(DLSA01%ints(1))
+      call c_f_pointer(tmp_ptr,ILSA,[9])
+
+      DLSR01 => common_data%DLSR01
+
+      tmp_ptr = c_loc(DLSR01%reals(1))
+      call c_f_pointer(tmp_ptr,RLSR,[5])
+
+      tmp_ptr = c_loc(DLSR01%ints(1))
+      call c_f_pointer(tmp_ptr,ILSR,[9])
+
 C
       IF (JOB .EQ. 2) GO TO 100
       DO 10 I = 1,LENRLS
