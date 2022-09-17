@@ -104,8 +104,49 @@ contains
     self%f => f
     self%neq = neq
 
+    ! jacobian stuff
+    if (present(jt)) then
+      if (jt == 1 .or. jt == 4) then
+        if (.not.present(jac)) then
+          ! err = 'if jt is 1 or 4, then jac must always be present'
+          istate = -3
+          return
+        endif
+      endif
+      self%jt = jt
+    else
+      self%jt = 2
+    endif
+    if (present(jac)) then
+      if (.not.present(jt)) then
+        ! err = 'if jac is present, then jt must always be present'
+        istate = -3
+        return
+      endif
+      self%jac => jac
+    endif
+
+    ! root function
+    if (present(ng)) then
+      if (.not.present(g)) then
+        istate = -3
+        return
+      endif
+    endif
+    if (present(g)) then
+      if (.not.present(ng)) then
+        istate = -3
+        return
+      endif
+      self%g => g
+      self%ng = ng
+      allocate(self%jroot(ng))
+    else
+      self%ng = 0
+    endif
+
     ! allocate memory
-    self%lrw = 22 + neq * max(16, neq + 9)
+    self%lrw = 22 + neq * max(16, neq + 9) + 3*self%ng
     if (allocated(self%rwork)) deallocate(self%rwork)
     allocate(self%rwork(self%lrw))
     self%liw = 20 + neq
@@ -152,41 +193,6 @@ contains
       self%iwork(9) = mxords
     else
       self%iwork(9) = 5
-    endif
-    
-    ! jacobian stuff
-    if (present(jt)) then
-      if (jt == 1 .or. jt == 4) then
-        if (.not.present(jac)) then
-          ! err = 'if jt is 1 or 4, then jac must always be present'
-          istate = -3
-          return
-        endif
-      endif
-      self%jt = jt
-    else
-      self%jt = 2
-    endif
-    if (present(jac)) then
-      if (.not.present(jt)) then
-        ! err = 'if jac is present, then jt must always be present'
-        istate = -3
-        return
-      endif
-      self%jac => jac
-    endif
-
-    ! root function
-    if (present(g)) then
-      if (.not.present(ng)) then
-        istate = -3
-        return
-      endif
-      self%g => g
-      self%ng = ng
-      allocate(self%jroot(ng))
-    else
-      self%ng = 0
     endif
 
   end subroutine

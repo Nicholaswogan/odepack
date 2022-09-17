@@ -2,6 +2,7 @@ program test_lsoda
   use odepack_mod
   implicit none
   call test_simple()
+  call test_rootfinding()
 contains
   subroutine test_simple()
     type(lsoda_class) :: ls
@@ -38,6 +39,38 @@ contains
     print*,'"test_simple" passed'
   end subroutine
 
+  subroutine test_rootfinding()
+    type(lsoda_class) :: ls
+    integer :: neq, itask, istate
+    real(dp) :: y(2), t, tout, rtol, atol(1)
+
+    neq = 2
+    call ls%initialize(rhs, neq, g=root_fcn, ng=1, istate=istate)
+    if (istate < 0) then
+      print*,istate
+      error stop '"test_rootfinding" failed'
+    endif
+
+    y(:) = [5.0_dp, 0.8_dp]
+    t = 0.0_dp
+    tout = 10.0_dp
+    rtol = 1.0e-8_dp
+    atol = 1.0e-8_dp
+    itask = 1
+    istate = 1
+    call ls%integrate(y, t, tout, rtol, atol, itask, istate)
+    if (istate < 0) then
+      print*,istate
+      error stop '"test_rootfinding" failed'
+    endif
+
+    if (istate /= 3 .or. .not.is_close(y(1),1.0_dp) .or. ls%jroot(1) /= 1) then
+      error stop '"test_rootfinding" failed'
+    endif
+
+    print*,'"test_rootfinding" passed'
+  end subroutine
+
   subroutine rhs(self, neq, t, y, ydot)
     class(lsoda_class), intent(inout) :: self
     integer, intent(in) :: neq
@@ -46,6 +79,16 @@ contains
     real(dp), intent(out) :: ydot(neq)
     ydot(1) = y(1)-y(1)*y(2)
     ydot(2) = y(1)*y(2)-y(2)
+  end subroutine
+
+  subroutine root_fcn(self, neq, t, y, ng, gout)
+    class(lsoda_class), intent(inout) :: self
+    integer, intent(in) :: neq
+    real(dp), intent(in) :: t
+    real(dp), intent(in) :: y(neq)
+    integer, intent(in) :: ng
+    real(dp), intent(out) :: gout(ng)
+    gout(1) = y(1) - 1.0_dp
   end subroutine
 
   !> coppied from fortran stdlib v0.2.0
