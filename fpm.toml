@@ -1,0 +1,14 @@
+name = "odepack"
+author = "Nicholas Wogan"
+maintainer = "Nicholas Wogan"
+license = "GNU General Public License v3.0"
+description = "Modern Fortran interface to part of ODEPACK"
+homepage = "https://github.com/Nicholaswogan/odepack"
+keywords = ["ODE"]
+
+[library]
+source-dir = "src"
+
+[build]
+auto-executables = false
+auto-tests = true

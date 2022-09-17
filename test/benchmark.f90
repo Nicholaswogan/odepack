@@ -1,7 +1,7 @@
 program main
   use odepack_mod
   implicit none
-  call benchmark_lorenz
+  call benchmark_lorenz()
   call benchmark_rober()
 contains
 
@@ -12,7 +12,7 @@ contains
     real(dp) :: t_eval(1001)
     real(dp) :: ysol(3,1001)
     integer :: i, j
-    integer, parameter :: nruns = 500
+    integer, parameter :: nruns = 100
     real(dp) :: time(2)
 
     neq = 3
@@ -55,7 +55,7 @@ contains
     real(dp) :: t_eval(100)
     real(dp) :: ysol(3,100)
     integer :: i, j
-    integer, parameter :: nruns = 5000
+    integer, parameter :: nruns = 100
     real(dp) :: time(2)
 
     neq = 3
@@ -84,7 +84,6 @@ contains
         endif
         ysol(:,i) = y(:)
       enddo
-      stop
     enddo
     call cpu_time(time(2))
 
