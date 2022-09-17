@@ -32,12 +32,12 @@ module odepack_mod
     integer, allocatable :: iwork(:)
 
     ! common block data
-    type(odepack_common_data) :: common_data
+    type(odepack_common_data), private :: common_data
     
   contains
     procedure :: initialize => lsoda_initialize
     procedure :: integrate => lsoda_integrate
-    ! procedure :: info => lsoda_get_info
+    procedure :: info => lsoda_info
   end type
 
   abstract interface
@@ -80,6 +80,7 @@ contains
 
   subroutine lsoda_initialize(self, f, neq, &
                               h0, hmax, hmin, ixpr, mxstep, mxhnil, mxordn, mxords, jac, jt, g, ng, &
+                              ml, mu, &
                               istate)
     class(lsoda_class), intent(inout) :: self
     procedure(lsoda_rhs_fcn) :: f
@@ -97,7 +98,11 @@ contains
     integer, optional, intent(in) :: jt
     procedure(lsoda_root_fcn), optional :: g
     integer, optional, intent(in) :: ng
+    integer, optional, intent(in) :: ml
+    integer, optional, intent(in) :: mu
     integer, intent(out) :: istate
+
+    integer :: ml_, mu_
 
     istate = 1
 
@@ -105,10 +110,27 @@ contains
     self%neq = neq
 
     ! jacobian stuff
+    if (present(ml) .and. present(mu)) then
+      ml_ = ml
+      mu_ = mu
+    elseif (.not.present(ml) .and. .not.present(mu)) then
+      ! nothing
+    else
+      ! err = '"ml" and "mu" most both be inputs'
+      istate = -3
+      return
+    endif
     if (present(jt)) then
       if (jt == 1 .or. jt == 4) then
         if (.not.present(jac)) then
           ! err = 'if jt is 1 or 4, then jac must always be present'
+          istate = -3
+          return
+        endif
+      endif
+      if (jt == 4 .or. jt == 5) then
+        if (.not.present(ml)) then
+          ! err = '"jt" is 4 or 5, therefore, "ml" and "mu" must be inputs.'
           istate = -3
           return
         endif
@@ -194,6 +216,10 @@ contains
     else
       self%iwork(9) = 5
     endif
+    if (present(mu)) then
+      self%iwork(1) = ml_
+      self%iwork(2) = mu_
+    endif
 
   end subroutine
 
@@ -265,6 +291,66 @@ contains
       real(dp), intent(out) :: gout_(ng_)
       call self%g(neq_, t_, y_, ng_, gout_)
     end subroutine
+  end subroutine
+
+  subroutine lsoda_info(self, hu, hcur, tcur, tolsf, tsw, nst, &
+                        nfe, nje, nqu, nqcur, imxer, mused, mcur)
+    class(lsoda_class), intent(inout) :: self
+    real(dp), optional, intent(out) :: hu
+    real(dp), optional, intent(out) :: hcur
+    real(dp), optional, intent(out) :: tcur
+    real(dp), optional, intent(out) :: tolsf
+    real(dp), optional, intent(out) :: tsw
+    integer, optional, intent(out) :: nst
+    integer, optional, intent(out) :: nfe
+    integer, optional, intent(out) :: nje
+    integer, optional, intent(out) :: nqu
+    integer, optional, intent(out) :: nqcur
+    integer, optional, intent(out) :: imxer
+    integer, optional, intent(out) :: mused
+    integer, optional, intent(out) :: mcur
+
+    if (present(hu)) then
+      hu = self%rwork(11)
+    endif
+    if (present(hcur)) then
+      hcur = self%rwork(12)
+    endif
+    if (present(tcur)) then
+      tcur = self%rwork(13)
+    endif
+    if (present(tolsf)) then
+      tolsf = self%rwork(14)
+    endif
+    if (present(tsw)) then
+      tsw = self%rwork(15)
+    endif
+
+    if (present(nst)) then
+      nst = self%iwork(11)
+    endif
+    if (present(nfe)) then
+      nfe = self%iwork(12)
+    endif
+    if (present(nje)) then
+      nje = self%iwork(13)
+    endif
+    if (present(nqu)) then
+      nqu= self%iwork(14)
+    endif
+    if (present(nqcur)) then
+      nqcur = self%iwork(15)
+    endif
+    if (present(imxer)) then
+      imxer = self%iwork(16)
+    endif
+    if (present(mused)) then
+      mused = self%iwork(19)
+    endif
+    if (present(mcur)) then
+      mcur = self%iwork(20)
+    endif
+
   end subroutine
 
 end module
