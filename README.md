@@ -8,7 +8,7 @@ For a simple example see `test/test_lsoda.f90`
 
 ## Building
 
-### CMake
+**CMake**
 
 ```sh
 mkdir build
@@ -22,7 +22,9 @@ cmake --build .
 ./test/benchmark
 ```
 
-### Fortran Package Manager
+Add as a dependency to your CMake projects with the [CMake Package Manager](https://github.com/cpm-cmake/CPM.cmake)
+
+**Fortran Package Manager**
 
 ```sh
 fpm build --profile release
