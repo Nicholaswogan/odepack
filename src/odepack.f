@@ -3,7 +3,7 @@
      1            ISTATE, IOPT, RWORK, LRW, IWORK, LIW, JAC, JT,
      2            common_data)
       use iso_c_binding, only: c_ptr, c_f_pointer, c_loc
-      use odepack_interface
+      use odepack_interface, only: DINTDY, DROOTS
       use odepack_common
       EXTERNAL F, JAC
       INTEGER NEQ, ITOL, ITASK, ISTATE, IOPT, LRW, IWORK, LIW, JT
@@ -1763,7 +1763,7 @@ C----------------------- End of Subroutine DLSODA ----------------------
      1            ISTATE, IOPT, RWORK, LRW, IWORK, LIW, JAC, JT,
      2            G, NG, JROOT, common_data)
       use iso_c_binding, only: c_ptr, c_f_pointer, c_loc
-      use odepack_interface
+      use odepack_interface, only: DINTDY, DROOTS
       use odepack_common
       type(odepack_common_data), target, intent(inout) :: common_data
       EXTERNAL F, JAC, G
