@@ -90,12 +90,13 @@ contains
     print*,'rober: ',1000.0_dp*(time(2) - time(1))/real(nruns,dp),'ms'
   end subroutine
 
-  subroutine rhs_lorenz(self, neq, t, u, du)
+  subroutine rhs_lorenz(self, neq, t, u, du, ierr)
     class(lsoda_class), intent(inout) :: self
     integer, intent(in) :: neq
     real(dp), intent(in) :: t
     real(dp), intent(in) :: u(neq)
     real(dp), intent(out) :: du(neq)
+    integer, intent(out) :: ierr
     
     real(dp) :: x, y, z
     real(dp), parameter :: sigma = 10.0_dp, &
@@ -109,14 +110,16 @@ contains
     du(2) = x * (rho - z) - y
     du(3) = x * y - beta * z
 
+    ierr = 0
   end subroutine
 
-  subroutine rhs_rober(self, neq, t, u, du)
+  subroutine rhs_rober(self, neq, t, u, du, ierr)
     class(lsoda_class), intent(inout) :: self
     integer, intent(in) :: neq
     real(dp), intent(in) :: t
     real(dp), intent(in) :: u(neq)
     real(dp), intent(out) :: du(neq)
+    integer, intent(out) :: ierr
     
     real(dp), parameter :: k1 = 0.04_dp, &
                            k2 = 3.0e7_dp, &
@@ -126,6 +129,7 @@ contains
     du(2) =  k1*u(1) - k2*u(2)**2.0_dp - k3*u(2)*u(3)
     du(3) =  k2*u(2)**2.0_dp
 
+    ierr = 0
   end subroutine
 
   subroutine linspace(from, to, array)

@@ -71,24 +71,28 @@ contains
     print*,'"test_rootfinding" passed'
   end subroutine
 
-  subroutine rhs(self, neq, t, y, ydot)
+  subroutine rhs(self, neq, t, y, ydot, ierr)
     class(lsoda_class), intent(inout) :: self
     integer, intent(in) :: neq
     real(dp), intent(in) :: t
     real(dp), intent(in) :: y(neq)
     real(dp), intent(out) :: ydot(neq)
+    integer, intent(out) :: ierr
     ydot(1) = y(1)-y(1)*y(2)
     ydot(2) = y(1)*y(2)-y(2)
+    ierr = 0
   end subroutine
 
-  subroutine root_fcn(self, neq, t, y, ng, gout)
+  subroutine root_fcn(self, neq, t, y, ng, gout, ierr)
     class(lsoda_class), intent(inout) :: self
     integer, intent(in) :: neq
     real(dp), intent(in) :: t
     real(dp), intent(in) :: y(neq)
     integer, intent(in) :: ng
     real(dp), intent(out) :: gout(ng)
+    integer, intent(out) :: ierr
     gout(1) = y(1) - 1.0_dp
+    ierr = 0
   end subroutine
 
   !> coppied from fortran stdlib v0.2.0

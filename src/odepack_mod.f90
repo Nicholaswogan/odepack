@@ -45,7 +45,7 @@ module odepack_mod
 
     !> Interface for the right-hand-side function defining the system
     !> of ODEs.
-    subroutine lsoda_rhs_fcn(self, neq, t, y, ydot)
+    subroutine lsoda_rhs_fcn(self, neq, t, y, ydot, ierr)
       import :: dp, lsoda_class
       implicit none
       class(lsoda_class), intent(inout) :: self
@@ -53,10 +53,12 @@ module odepack_mod
       real(dp), intent(in) :: t !! current time
       real(dp), intent(in) :: y(neq) !! state vector
       real(dp), intent(out) :: ydot(neq) !! derivative vector
+      integer, intent(out) :: ierr !! Set to >= 0 if successful.
+                                   !! Set to < 0 to terminate the integration 
     end subroutine
 
     !> Interface for the user-supplied jacobian function
-    subroutine lsoda_jac_fcn(self, neq, t, y, ml, mu, pd, nrowpd)
+    subroutine lsoda_jac_fcn(self, neq, t, y, ml, mu, pd, nrowpd, ierr)
       import :: dp, lsoda_class
       implicit none
       class(lsoda_class), intent(inout) :: self
@@ -91,10 +93,12 @@ module odepack_mod
       !! saved in a user Common block by F and not recomputed by JAC,
       !! if desired.  Also, JAC may alter the Y array, if desired.
       integer, intent(in) :: nrowpd !! leading dimension of jacobian matrix
+      integer, intent(out) :: ierr !! Set to >= 0 if successful.
+                                   !! Set to < 0 to terminate the integration
     end subroutine
 
     !> Interface for the root finding function
-    subroutine lsoda_root_fcn(self, neq, t, y, ng, gout)
+    subroutine lsoda_root_fcn(self, neq, t, y, ng, gout, ierr)
       import :: dp, lsoda_class
       implicit none
       class(lsoda_class), intent(inout) :: self
@@ -104,6 +108,8 @@ module odepack_mod
       integer, intent(in) :: ng !! number of roots
       real(dp), intent(out) :: gout(ng) !! Roots. The program will find
                                         !! scenarios where gout(i) changes sign
+      integer, intent(out) :: ierr !! Set to >= 0 if successful.
+                                   !! Set to < 0 to terminate the integration
     end subroutine
   end interface
 
@@ -439,6 +445,9 @@ contains
     !!       proceed, but the integration was successful as far as T.
     !!       This happens when DLSODAR chooses to switch methods
     !!       but LRW and/or LIW is too small for the new method.
+    !! * -8  means that the user terminated the integration by setting
+    !!       `ierr` < 0 in the function `f`, the jacobian `jac`, or the
+    !!       root function `g`.
     !! 
     !! Note:  Since the normal output value of ISTATE is 2,
     !! it does not need to be reset for normal continuation.
@@ -448,7 +457,7 @@ contains
     !! calling the solver again.
 
     integer :: i
-    integer :: itol
+    integer :: itol, ierr
     integer, parameter :: iopt = 1
 
     ! check dimensions
@@ -470,7 +479,11 @@ contains
 
     if (associated(self%g)) then
       ! we compute the roots at input
-      call self%g(self%neq, t, y, self%ng, self%gout_input)
+      call self%g(self%neq, t, y, self%ng, self%gout_input, ierr)
+      if (ierr < 0) then
+        istate = -8
+        return
+      endif
       call dlsodar(f, self%neq, y, t, tout, itol, rtol, atol, itask, &
                    istate, iopt, self%rwork, self%lrw, self%iwork, self%liw, jac, self%jt, &
                    g, self%ng, self%jroot, self%common_data)
@@ -492,15 +505,16 @@ contains
     endif
 
   contains
-    subroutine f(neq_, t_, y_, ydot_)
+    subroutine f(neq_, t_, y_, ydot_, ierr_)
       integer, intent(in) :: neq_
       real(dp), intent(in) :: t_
       real(dp), intent(in) :: y_(neq_)
       real(dp), intent(out) :: ydot_(neq_)
-      call self%f(neq_, t_, y_, ydot_)
+      integer, intent(out) :: ierr_
+      call self%f(neq_, t_, y_, ydot_, ierr_)
     end subroutine
     
-    subroutine jac(neq_, t_, y_, ml_, mu_, pd_, nrowpd_)
+    subroutine jac(neq_, t_, y_, ml_, mu_, pd_, nrowpd_, ierr_)
       integer, intent(in) :: neq_
       real(dp), intent(in) :: t_
       real(dp), intent(inout) :: y_(neq_)
@@ -508,16 +522,18 @@ contains
       integer, intent(in) :: mu_
       real(dp), intent(out) :: pd_(nrowpd_,neq_)
       integer, intent(in) :: nrowpd_
-      call self%jac(neq_, t_, y_, ml_, mu_, pd_, nrowpd_)
+      integer, intent(out) :: ierr_
+      call self%jac(neq_, t_, y_, ml_, mu_, pd_, nrowpd_, ierr_)
     end subroutine
 
-    subroutine g(neq_, t_, y_, ng_, gout_)
+    subroutine g(neq_, t_, y_, ng_, gout_, ierr_)
       integer, intent(in) :: neq_
       real(dp), intent(in) :: t_
       real(dp), intent(in) :: y_(neq_)
       integer, intent(in) :: ng_
       real(dp), intent(out) :: gout_(ng_)
-      call self%g(neq_, t_, y_, ng_, gout_)
+      integer, intent(out) :: ierr_
+      call self%g(neq_, t_, y_, ng_, gout_, ierr_)
     end subroutine
   end subroutine
 

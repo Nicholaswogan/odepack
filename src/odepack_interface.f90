@@ -8,16 +8,17 @@ module odepack_interface
   public :: DINTDY, DROOTS
 
   abstract interface
-    subroutine odepack_f(neq, t, y, ydot)
+    subroutine odepack_f(neq, t, y, ydot, ierr)
       import :: dp
       implicit none
       integer, intent(in) :: neq
       real(dp), intent(in) :: t
       real(dp), intent(in) :: y(neq)
       real(dp), intent(out) :: ydot(neq)
+      integer, intent(out) :: ierr
     end subroutine
     
-    subroutine odepack_jac(neq, t, y, ml, mu, pd, nrowpd)
+    subroutine odepack_jac(neq, t, y, ml, mu, pd, nrowpd, ierr)
       import :: dp
       implicit none
       integer, intent(in) :: neq
@@ -27,9 +28,10 @@ module odepack_interface
       integer, intent(in) :: mu
       real(dp), intent(out) :: pd(nrowpd,neq)
       integer, intent(in) :: nrowpd
+      integer, intent(out) :: ierr
     end subroutine
 
-    subroutine odepack_g(neq, t, y, ng, gout)
+    subroutine odepack_g(neq, t, y, ng, gout, ierr)
       import :: dp
       implicit none
       integer, intent(in) :: neq
@@ -37,6 +39,7 @@ module odepack_interface
       real(dp), intent(in) :: y(neq)
       integer, intent(in) :: ng
       real(dp), intent(out) :: gout(ng)
+      integer, intent(out) :: ierr
     end subroutine
   end interface
   

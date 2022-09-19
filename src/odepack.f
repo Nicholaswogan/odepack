@@ -1341,7 +1341,8 @@ C-----------------------------------------------------------------------
       MXNCF = 10
 C Initial call to F.  (LF0 points to YH(*,2).) -------------------------
       LF0 = LYH + NYH
-      CALL F (NEQ, T, Y, RWORK(LF0))
+      CALL F (NEQ, T, Y, RWORK(LF0), common_data%ierr)
+      if (common_data%ierr < 0) then; istate = -8; return; endif
       NFE = 1
 C Load the initial value vector in YH. ---------------------------------
       DO 115 I = 1,N
@@ -1483,6 +1484,7 @@ C-----------------------------------------------------------------------
       CALL DSTODA (NEQ, Y, RWORK(LYH), NYH, RWORK(LYH), RWORK(LEWT),
      1   RWORK(LSAVF), RWORK(LACOR), RWORK(LWM), IWORK(LIWM),
      2   F, JAC, DPRJA, DSOLSY, common_data)
+      if (common_data%ierr < 0) then; istate = -8; return; endif
       KGO = 1 - KFLAG
       GO TO (300, 530, 540), KGO
 C-----------------------------------------------------------------------
@@ -3278,7 +3280,8 @@ C-----------------------------------------------------------------------
       MXNCF = 10
 C Initial call to F.  (LF0 points to YH(*,2).) -------------------------
       LF0 = LYH + NYH
-      CALL F (NEQ, T, Y, RWORK(LF0))
+      CALL F (NEQ, T, Y, RWORK(LF0), common_data%ierr)
+      if (common_data%ierr < 0) then; istate = -8; return; endif
       NFE = 1
 C Load the initial value vector in YH. ---------------------------------
       DO 115 I = 1,N
@@ -3345,6 +3348,7 @@ C Check for a zero of g at T. ------------------------------------------
       IF (NGC .EQ. 0) GO TO 270
       CALL DRCHEK (1, G, NEQ, Y, RWORK(LYH), NYH,
      1   RWORK(LG0), RWORK(LG1), RWORK(LGX), JROOT, IRT, common_data)
+      if (common_data%ierr < 0) then; istate = -8; return; endif
       IF (IRT .EQ. 0) GO TO 270
       GO TO 632
 C-----------------------------------------------------------------------
@@ -3363,6 +3367,7 @@ C
       IF (ITASK .EQ. 1 .OR. ITASK .EQ. 4) TOUTC = TOUT
       CALL DRCHEK (2, G, NEQ, Y, RWORK(LYH), NYH,
      1   RWORK(LG0), RWORK(LG1), RWORK(LGX), JROOT, IRT, common_data)
+      if (common_data%ierr < 0) then; istate = -8; return; endif
       IF (IRT .NE. 1) GO TO 205
       IRFND = 1
       ISTATE = 3
@@ -3448,6 +3453,7 @@ C-----------------------------------------------------------------------
       CALL DSTODA (NEQ, Y, RWORK(LYH), NYH, RWORK(LYH), RWORK(LEWT),
      1   RWORK(LSAVF), RWORK(LACOR), RWORK(LWM), IWORK(LIWM),
      2   F, JAC, DPRJA, DSOLSY, common_data)
+      if (common_data%ierr < 0) then; istate = -8; return; endif
       KGO = 1 - KFLAG
       GO TO (300, 530, 540), KGO
 C-----------------------------------------------------------------------
@@ -3485,6 +3491,7 @@ C
       IF (NGC .EQ. 0) GO TO 315
       CALL DRCHEK (3, G, NEQ, Y, RWORK(LYH), NYH,
      1   RWORK(LG0), RWORK(LG1), RWORK(LGX), JROOT, IRT, common_data)
+      if (common_data%ierr < 0) then; istate = -8; return; endif
       IF (IRT .NE. 1) GO TO 315
       IRFND = 1
       ISTATE = 3

@@ -994,7 +994,8 @@ C-----------------------------------------------------------------------
       DEL = 0.0D0
       DO 230 I = 1,N
  230    Y(I) = YH(I,1)
-      CALL F (NEQ, TN, Y, SAVF)
+      CALL F (NEQ, TN, Y, SAVF, common_data%ierr)
+      if (common_data%ierr < 0) return
       NFE = NFE + 1
       IF (IPUP .LE. 0) GO TO 250
 C-----------------------------------------------------------------------
@@ -1004,6 +1005,7 @@ C to 0 as an indicator that this has been done.
 C-----------------------------------------------------------------------
       CALL PJAC (NEQ, Y, YH, NYH, EWT, ACOR, SAVF, WM, IWM, F, JAC,
      1           common_data)
+      if (common_data%ierr < 0) return
       IPUP = 0
       RC = 1.0D0
       NSLP = NST
@@ -1068,7 +1070,8 @@ C-----------------------------------------------------------------------
       IF (M .EQ. MAXCOR) GO TO 410
       IF (M .GE. 2 .AND. DEL .GT. 2.0D0*DELP) GO TO 410
       DELP = DEL
-      CALL F (NEQ, TN, Y, SAVF)
+      CALL F (NEQ, TN, Y, SAVF, common_data%ierr)
+      if (common_data%ierr < 0) return
       NFE = NFE + 1
       GO TO 270
 C-----------------------------------------------------------------------
@@ -1343,7 +1346,8 @@ C-----------------------------------------------------------------------
       H = H*RH
       DO 645 I = 1,N
  645    Y(I) = YH(I,1)
-      CALL F (NEQ, TN, Y, SAVF)
+      CALL F (NEQ, TN, Y, SAVF, common_data%ierr)
+      if (common_data%ierr < 0) return
       NFE = NFE + 1
       DO 650 I = 1,N
  650    YH(I,2) = H*SAVF(I)
@@ -1555,7 +1559,8 @@ C If MITER = 1, call JAC and multiply by scalar. -----------------------
  100  LENP = N*N
       DO 110 I = 1,LENP
  110    WM(I+2) = 0.0D0
-      CALL JAC (NEQ, TN, Y, 0, 0, WM(3), N)
+      CALL JAC (NEQ, TN, Y, 0, 0, WM(3), N, common_data%ierr)
+      if (common_data%ierr < 0) return
       CON = -HL0
       DO 120 I = 1,LENP
  120    WM(I+2) = WM(I+2)*CON
@@ -1571,7 +1576,8 @@ C If MITER = 2, make N calls to F to approximate J. --------------------
         R = MAX(SRUR*ABS(YJ),R0/EWT(J))
         Y(J) = Y(J) + R
         FAC = -HL0/R
-        CALL F (NEQ, TN, Y, FTEM)
+        CALL F (NEQ, TN, Y, FTEM, common_data%ierr)
+        if (common_data%ierr < 0) return
         DO 220 I = 1,N
  220      WM(I+J1) = (FTEM(I) - SAVF(I))*FAC
         Y(J) = YJ
@@ -1602,7 +1608,8 @@ C If MITER = 4, call JAC and multiply by scalar. -----------------------
       LENP = MEBAND*N
       DO 410 I = 1,LENP
  410    WM(I+2) = 0.0D0
-      CALL JAC (NEQ, TN, Y, ML, MU, WM(ML3), MEBAND)
+      CALL JAC (NEQ, TN, Y, ML, MU, WM(ML3), MEBAND, common_data%ierr)
+      if (common_data%ierr < 0) return
       CON = -HL0
       DO 420 I = 1,LENP
  420    WM(I+2) = WM(I+2)*CON
@@ -1623,7 +1630,8 @@ C If MITER = 5, make MBAND calls to F to approximate J. ----------------
           YI = Y(I)
           R = MAX(SRUR*ABS(YI),R0/EWT(I))
  530      Y(I) = Y(I) + R
-        CALL F (NEQ, TN, Y, FTEM)
+        CALL F (NEQ, TN, Y, FTEM, common_data%ierr)
+        if (common_data%ierr < 0) return
         DO 550 JJ = J,N,MBAND
           Y(JJ) = YH(JJ,1)
           YJJ = Y(JJ)
@@ -1987,7 +1995,8 @@ C
 C Evaluate g at initial T, and check for zero values. ------------------
  100  CONTINUE
       T0 = TN
-      CALL G (NEQ, T0, Y, NGC, G0)
+      CALL G (NEQ, T0, Y, NGC, G0, common_data%ierr)
+      if (common_data%ierr < 0) return
       NGE = 1
       ZROOT = .FALSE.
       DO 110 I = 1,NGC
@@ -1999,7 +2008,8 @@ C g has a zero at T.  Look at g at T + (small increment). --------------
       T0 = T0 + TEMP1
       DO 120 I = 1,N
  120    Y(I) = Y(I) + TEMP2*YH(I,2)
-      CALL G (NEQ, T0, Y, NGC, G0)
+      CALL G (NEQ, T0, Y, NGC, G0, common_data%ierr)
+      if (common_data%ierr < 0) return
       NGE = NGE + 1
       ZROOT = .FALSE.
       DO 130 I = 1,NGC
@@ -2017,7 +2027,8 @@ C
       IF (IRFND .EQ. 0) GO TO 260
 C If a root was found on the previous step, evaluate G0 = g(T0). -------
       CALL DINTDY (T0, 0, YH, NYH, Y, IFLAG, common_data)
-      CALL G (NEQ, T0, Y, NGC, G0)
+      CALL G (NEQ, T0, Y, NGC, G0, common_data%ierr)
+      if (common_data%ierr < 0) return
       NGE = NGE + 1
       ZROOT = .FALSE.
       DO 210 I = 1,NGC
@@ -2032,7 +2043,8 @@ C g has a zero at T0.  Look at g at T + (small increment). -------------
  220    Y(I) = Y(I) + TEMP2*YH(I,2)
       GO TO 240
  230  CALL DINTDY (T0, 0, YH, NYH, Y, IFLAG, common_data)
- 240  CALL G (NEQ, T0, Y, NGC, G0)
+ 240  CALL G (NEQ, T0, Y, NGC, G0, common_data%ierr)
+      if (common_data%ierr < 0) return
       NGE = NGE + 1
       ZROOT = .FALSE.
       DO 250 I = 1,NGC
@@ -2058,7 +2070,8 @@ C Set T1 to TN or TOUTC, whichever comes first, and get g at T1. -------
  310  T1 = TN
       DO 320 I = 1,N
  320    Y(I) = YH(I,1)
- 330  CALL G (NEQ, T1, Y, NGC, G1)
+ 330  CALL G (NEQ, T1, Y, NGC, G1, common_data%ierr)
+      if (common_data%ierr < 0) return
       NGE = NGE + 1
 C Call DROOTS to search for root in interval from T0 to T1. ------------
       JFLAG = 0
@@ -2067,7 +2080,8 @@ C Call DROOTS to search for root in interval from T0 to T1. ------------
      1             common_data)
       IF (JFLAG .GT. 1) GO TO 360
       CALL DINTDY (X, 0, YH, NYH, Y, IFLAG, common_data)
-      CALL G (NEQ, X, Y, NGC, GX)
+      CALL G (NEQ, X, Y, NGC, GX, common_data%ierr)
+      if (common_data%ierr < 0) return
       NGE = NGE + 1
       GO TO 350
  360  T0 = X

@@ -54,6 +54,7 @@ module odepack_common
   ! 1   LG0, LG1, LGX, IOWNR3(2), IRFND, ITASKC, NGC, NGE
 
   type :: odepack_common_data
+    integer :: ierr
     type(DLS001_type) :: DLS001
     type(DLSA01_type) :: DLSA01
     type(DLSR01_type) :: DLSR01
