@@ -13,4 +13,8 @@ target_link_libraries(odepack_mod odepack)
 
 if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU")
   target_compile_options(odepack PRIVATE -std=legacy -w)
+  if ("${CMAKE_BUILD_TYPE}" MATCHES "Release")
+    target_compile_options(odepack PRIVATE -funroll-loops -finline-functions)
+    target_compile_options(odepack_mod PRIVATE -funroll-loops -finline-functions)
+  endif()
 endif()
