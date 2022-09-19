@@ -1,6 +1,6 @@
 # ODEPACK
 
-This is a Modern Fortran interface the `LSODA` and `LSODAR` routines in [ODEPACK](https://people.sc.fsu.edu/~jburkardt/f77_src/odepack/odepack.html). This repository contains a modified version of ODEPACK which is threadsafe.
+This is a Modern Fortran interface the `LSODA` and `LSODAR` routines in [ODEPACK](https://people.sc.fsu.edu/~jburkardt/f77_src/odepack/odepack.html), which is for solving ordinary differential equation initial value problems. This repository contains a modified version of ODEPACK which is threadsafe.
 
 ## Example
 
