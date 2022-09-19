@@ -64,7 +64,7 @@ contains
       error stop '"test_rootfinding" failed'
     endif
 
-    if (istate /= 3 .or. .not.is_close(y(1),1.0_dp) .or. ls%jroot(1) /= 1) then
+    if (istate /= 3 .or. .not.is_close(y(1),1.0_dp) .or. ls%jroot(1) /= -1) then
       error stop '"test_rootfinding" failed'
     endif
 

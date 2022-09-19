@@ -12,7 +12,7 @@ contains
     real(dp) :: t_eval(1001)
     real(dp) :: ysol(3,1001)
     integer :: i, j
-    integer, parameter :: nruns = 100
+    integer, parameter :: nruns = 3000
     real(dp) :: time(2)
 
     neq = 3
@@ -55,7 +55,7 @@ contains
     real(dp) :: t_eval(100)
     real(dp) :: ysol(3,100)
     integer :: i, j
-    integer, parameter :: nruns = 100
+    integer, parameter :: nruns = 1000
     real(dp) :: time(2)
 
     neq = 3

@@ -30,3 +30,7 @@ Add as a dependency to your CMake projects with the [CMake Package Manager](http
 fpm build --profile release
 fpm test --profile release
 ```
+
+## Documentation
+
+The file `src/odepack_mod.f90` contains extensive comments describing the use of the user-interfacing class `lsoda_class`.

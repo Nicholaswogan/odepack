@@ -22,7 +22,7 @@ module odepack_interface
       implicit none
       integer, intent(in) :: neq
       real(dp), intent(in) :: t
-      real(dp), intent(in) :: y(neq)
+      real(dp), intent(inout) :: y(neq)
       integer, intent(in) :: ml
       integer, intent(in) :: mu
       real(dp), intent(out) :: pd(nrowpd,neq)
