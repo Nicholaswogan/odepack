@@ -3,6 +3,7 @@ program test_lsoda
   implicit none
   call test_simple()
   call test_rootfinding()
+  call test_dense_jacobian()
 contains
   subroutine test_simple()
     type(lsoda_class) :: ls
@@ -69,6 +70,93 @@ contains
     endif
 
     print*,'"test_rootfinding" passed'
+  end subroutine
+
+  subroutine test_dense_jacobian()
+    type(lsoda_class) :: ls
+    integer :: neq, itask, istate, nje
+    real(dp) :: y(3), t, tout, rtol, atol(1)
+
+    neq = 3
+    rtol = 1.0e-8_dp
+    atol = 1.0e-8_dp
+    itask = 1
+    
+    ! with finite differenced jacobian
+    call ls%initialize(rhs_rober, neq, jt=2, istate=istate)
+    if (istate < 0) then
+      print*,istate
+      error stop '"test_dense_jacobian" failed'
+    endif
+
+    y(:) = [1.0_dp,0.0_dp,0.0_dp]
+    t = 0.0_dp
+    tout = 1.0e5_dp
+    istate = 1
+    call ls%integrate(y, t, tout, rtol, atol, itask, istate)
+    if (istate < 0) then
+      print*,istate
+      error stop '"test_dense_jacobian" failed'
+    endif
+
+    ! with analytical jacobian
+    call ls%initialize(rhs_rober, neq, jt=1, jac=jac_rober, istate=istate)
+    if (istate < 0) then
+      print*,istate
+      error stop '"test_dense_jacobian" failed'
+    endif
+
+    y(:) = [1.0_dp,0.0_dp,0.0_dp]
+    t = 0.0_dp
+    tout = 1.0e5_dp
+    istate = 1
+    call ls%integrate(y, t, tout, rtol, atol, itask, istate)
+    if (istate < 0) then
+      print*,istate
+      error stop '"test_dense_jacobian" failed'
+    endif
+
+    print*,'"test_dense_jacobian" passed'
+  end subroutine
+
+  subroutine jac_rober(self, neq, t, u, ml, mu, pd, nrpd, ierr)
+    class(lsoda_class), intent(inout) :: self
+    integer, intent(in) :: neq
+    real(dp), intent(in) :: t
+    real(dp), intent(inout) :: u(neq)
+    integer, intent(in) :: ml, mu
+    real(dp), intent(out) :: pd(nrpd,neq)
+    integer, intent(in) :: nrpd
+    integer, intent(out) :: ierr
+    
+    real(dp), parameter :: k1 = 0.04_dp, &
+                           k2 = 3.0e7_dp, &
+                           k3 = 1.0e4_dp
+    
+    pd(:,1) = [-k1, k1, 0.0_dp]
+    pd(:,2) = [k3*u(3), -2.0_dp*k2*u(2) - k3*u(3), 2.0_dp*k2*u(2)]
+    pd(:,3) = [k3*u(2), -k3*u(2), 0.0_dp]
+    
+    ierr = 0
+  end subroutine
+
+  subroutine rhs_rober(self, neq, t, u, du, ierr)
+    class(lsoda_class), intent(inout) :: self
+    integer, intent(in) :: neq
+    real(dp), intent(in) :: t
+    real(dp), intent(in) :: u(neq)
+    real(dp), intent(out) :: du(neq)
+    integer, intent(out) :: ierr
+
+    real(dp), parameter :: k1 = 0.04_dp, &
+                           k2 = 3.0e7_dp, &
+                           k3 = 1.0e4_dp
+    
+    du(1) = -k1*u(1) + k3*u(2)*u(3)
+    du(2) =  k1*u(1) - k2*u(2)**2.0_dp - k3*u(2)*u(3)
+    du(3) =  k2*u(2)**2.0_dp
+
+    ierr = 0
   end subroutine
 
   subroutine rhs(self, neq, t, y, ydot, ierr)
