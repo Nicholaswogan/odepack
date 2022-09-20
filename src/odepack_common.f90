@@ -6,10 +6,10 @@ module odepack_common
   public :: odepack_common_data
 
   type :: DLS001_type
-    double precision :: reals(218)
+    double precision :: reals(218) = 0.0d0
     ! double precision :: ROWNS(209)
     ! double precision :: CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND
-    integer :: ints(37)
+    integer :: ints(37) = 0
     ! integer :: INIT, MXSTEP, MXHNIL, NHNIL, NSLAST, NYH, IOWNS(6)
     ! integer :: ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L
     ! integer :: LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER
@@ -30,9 +30,9 @@ module odepack_common
   ! 5   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
   
   type :: DLSA01_type
-    double precision :: reals(22)
+    double precision :: reals(22) = 0.0d0
     ! double precision :: TSW, ROWNS2(20), PDNORM
-    integer :: ints(9)
+    integer :: ints(9) = 0
     ! integer :: INSUFR, INSUFI, IXPR, IOWNS2(2), JTYP, MUSED, MXORDN, MXORDS
   end type
 
@@ -42,9 +42,9 @@ module odepack_common
   ! 1   INSUFR, INSUFI, IXPR, IOWNS2(2), JTYP, MUSED, MXORDN, MXORDS
 
   type :: DLSR01_type
-    double precision :: reals(5)
+    double precision :: reals(5) = 0.0d0
     ! double precision :: ROWNR3(2), T0, TLAST, TOUTC
-    integer :: ints(9)
+    integer :: ints(9) = 0
     ! integer :: LG0, LG1, LGX, IOWNR3(2), IRFND, ITASKC, NGC, NGE
   end type
 

@@ -33,7 +33,7 @@ module odepack_mod
 
     !> Derived type that replaces the common blocks in 
     !> the original ODEPACK
-    type(odepack_common_data), private :: common_data 
+    type(odepack_common_data) :: common_data 
     
   contains
     procedure :: initialize => lsoda_initialize
@@ -538,11 +538,10 @@ contains
   end subroutine
 
   !> Get information about the integration.
-  subroutine lsoda_info(self, hu, hcur, tcur, tolsf, tsw, nst, &
-                        nfe, nje, nqu, nqcur, imxer, mused, mcur)
+  subroutine lsoda_info(self, h, tcur, tolsf, tsw, nst, &
+                        nfe, nje, nq, imxer, meth)
     class(lsoda_class), intent(inout) :: self
-    real(dp), optional, intent(out) :: hu !! the step size in t last used (successfully).
-    real(dp), optional, intent(out) :: hcur !! the step size to be attempted on the next step.
+    real(dp), optional, intent(out) :: h !! the step size currently being attempted
     real(dp), optional, intent(out) :: tcur !! the current value of the independent variable
                                             !! which the solver has actually reached, i.e. the
                                             !! current internal mesh point in t.  On output, TCUR
@@ -563,58 +562,43 @@ contains
     integer, optional, intent(out) :: nfe !! the number of f evaluations for the problem so far.
     integer, optional, intent(out) :: nje !! the number of Jacobian evaluations (and of matrix
                                           !! LU decompositions) for the problem so far.
-    integer, optional, intent(out) :: nqu !! the method order last used (successfully).
-    integer, optional, intent(out) :: nqcur !! the order to be attempted on the next step.
+    integer, optional, intent(out) :: nq !! the method order currently being attempted.
     integer, optional, intent(out) :: imxer !! the index of the component of largest magnitude in
                                             !! the weighted local error vector ( E(i)/EWT(i) ),
                                             !! on an error return with ISTATE = -4 or -5.
-    integer, optional, intent(out) :: mused !! the method indicator for the last successful step:
-                                            !! 1 means Adams (nonstiff), 2 means BDF (stiff).
-    integer, optional, intent(out) :: mcur !! the current method indicator:
+    integer, optional, intent(out) :: meth !! the method indicator for the current step:
                                            !! 1 means Adams (nonstiff), 2 means BDF (stiff).
-                                           !! This is the method to be attempted
-                                           !! on the next step.  Thus it differs from MUSED
-                                           !! only if a method switch has just been made.
 
-    if (present(hu)) then
-      hu = self%rwork(11)
-    endif
-    if (present(hcur)) then
-      hcur = self%rwork(12)
+    if (present(h)) then
+      h = self%common_data%DLS001%reals(212)
     endif
     if (present(tcur)) then
-      tcur = self%rwork(13)
+      tcur = self%common_data%DLS001%reals(217)
     endif
     if (present(tolsf)) then
       tolsf = self%rwork(14)
     endif
     if (present(tsw)) then
-      tsw = self%rwork(15)
+      tsw = self%common_data%DLSA01%reals(1)
     endif
 
     if (present(nst)) then
-      nst = self%iwork(11)
+      nst = self%common_data%DLS001%ints(34)
     endif
     if (present(nfe)) then
-      nfe = self%iwork(12)
+      nfe = self%common_data%DLS001%ints(35)
     endif
     if (present(nje)) then
-      nje = self%iwork(13)
+      nje = self%common_data%DLS001%ints(36)
     endif
-    if (present(nqu)) then
-      nqu= self%iwork(14)
-    endif
-    if (present(nqcur)) then
-      nqcur = self%iwork(15)
+    if (present(nq)) then
+      nq = self%common_data%DLS001%ints(33)
     endif
     if (present(imxer)) then
       imxer = self%iwork(16)
     endif
-    if (present(mused)) then
-      mused = self%iwork(19)
-    endif
-    if (present(mcur)) then
-      mcur = self%iwork(20)
+    if (present(meth)) then
+      meth = self%common_data%DLS001%ints(26)
     endif
 
   end subroutine
