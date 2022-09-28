@@ -12,6 +12,11 @@ module odepack_mod
   !> `odepack.f` 
   type :: lsoda_class
 
+    !> If istate < 0 from a call to `initialize` or `integrate`
+    !> then `error_message` elaborates on the exact cause of the
+    !> error
+    character(:), allocatable :: error_message
+
     ! functions
     integer :: neq !! number of ODEs
     procedure(lsoda_rhs_fcn), pointer :: f => NULL() !! right-hand-side of ODEs
@@ -117,7 +122,7 @@ contains
 
   !> Initializes the ODE integrator
   subroutine lsoda_initialize(self, f, neq, &
-                              h0, hmax, hmin, ixpr, mxstep, mxhnil, mxordn, mxords, jac, jt, g, ng, &
+                              h0, hmax, hmin, iprint, ixpr, mxstep, mxhnil, mxordn, mxords, jac, jt, g, ng, &
                               ml, mu, &
                               istate)
     class(lsoda_class), intent(inout) :: self
@@ -133,6 +138,9 @@ contains
                                            !! The default value is 0.  (This lower bound is not
                                            !! enforced on the final step before reaching TCRIT
                                            !! when ITASK = 4 or 5.)
+    integer, optional, intent(in) :: iprint !! flag to print warning messages.
+                                            !! IXPR = 0 means no printing
+                                            !! IXPR = 1 means warnings will be printed (the default)
     integer, optional, intent(in) :: ixpr !! flag to generate extra printing at method switches.
                                           !! IXPR = 0 means no extra printing (the default).
                                           !! IXPR = 1 means print data on each switch.
@@ -176,6 +184,8 @@ contains
 
     istate = 1
 
+    if (allocated(self%error_message)) deallocate(self%error_message)
+
     self%f => f
     self%neq = neq
 
@@ -186,21 +196,21 @@ contains
     elseif (.not.present(ml) .and. .not.present(mu)) then
       ! nothing
     else
-      ! err = '"ml" and "mu" most both be inputs'
+      self%error_message = 'lsoda_initialize: `ml` and `mu` must both be inputs'
       istate = -3
       return
     endif
     if (present(jt)) then
       if (jt == 1 .or. jt == 4) then
         if (.not.present(jac)) then
-          ! err = 'if jt is 1 or 4, then jac must always be present'
+          self%error_message = 'lsoda_initialize: if `jt` is 1 or 4, then `jac` must always be present'
           istate = -3
           return
         endif
       endif
       if (jt == 4 .or. jt == 5) then
         if (.not.present(ml)) then
-          ! err = '"jt" is 4 or 5, therefore, "ml" and "mu" must be inputs.'
+          self%error_message = 'lsoda_initialize: `jt` is 4 or 5, therefore, `ml` and `mu` must be inputs.'
           istate = -3
           return
         endif
@@ -211,7 +221,7 @@ contains
     endif
     if (present(jac)) then
       if (.not.present(jt)) then
-        ! err = 'if jac is present, then jt must always be present'
+        self%error_message = 'lsoda_initialize: if `jac` is present, then `jt` must always be present'
         istate = -3
         return
       endif
@@ -221,12 +231,14 @@ contains
     ! root function
     if (present(ng)) then
       if (.not.present(g)) then
+        self%error_message = 'lsoda_initialize: `ng` is present but root function `g` is not.'
         istate = -3
         return
       endif
     endif
     if (present(g)) then
       if (.not.present(ng)) then
+        self%error_message = 'lsoda_initialize: Root function `g` is present but variable `ng` is not.'
         istate = -3
         return
       endif
@@ -263,6 +275,16 @@ contains
       self%rwork(7) = hmin
     else
       self%rwork(7) = 0.0_dp
+    endif
+    if (present(iprint)) then
+      if (iprint /= 0 .and. iprint /= 1) then
+        self%error_message = 'lsoda_initialize: `iprint` has an illegal value.'
+        istate = -3
+        return
+      endif
+      self%common_data%iprint = iprint
+    else
+      self%common_data%iprint = 1
     endif
     if (present(ixpr)) then
       self%iwork(5) = ixpr
@@ -460,9 +482,12 @@ contains
     integer :: itol, ierr
     integer, parameter :: iopt = 1
 
+    if (allocated(self%error_message)) deallocate(self%error_message)
+    if (allocated(self%common_data%error_message)) deallocate(self%common_data%error_message)
+
     ! check dimensions
     if (size(y) /= self%neq) then
-      ! err = 'lsoda_integrate: "y" has the wrong dimension.'
+      self%error_message = 'lsoda_integrate: `y` has the wrong dimension.'
       istate = -3
       return
     endif
@@ -472,7 +497,7 @@ contains
     elseif (size(atol) == self%neq) then
       itol = 2
     else
-      ! err = 'lsoda_integrate: "atol" can be size 1 or size neq.'
+      self%error_message = 'lsoda_integrate: `atol` can be size 1 or size neq.'
       istate = -3
       return
     endif
@@ -481,6 +506,7 @@ contains
       ! we compute the roots at input
       call self%g(self%neq, t, y, self%ng, self%gout_input, ierr)
       if (ierr < 0) then
+        self%error_message = 'Integration was haulted in a user supplied subroutine by setting ierr < 0'
         istate = -8
         return
       endif
@@ -502,6 +528,22 @@ contains
       call dlsoda(f, self%neq, y, t, tout, itol, rtol, atol, itask, &
                   istate, iopt, self%rwork, self%lrw, self%iwork, self%liw, jac, self%jt, &
                   self%common_data)
+    endif
+
+    if (istate < 0) then
+      if (istate == -8) then
+        self%error_message = 'Integration was haulted in a user supplied subroutine by setting ierr < 0'
+        return
+      else
+        if (allocated(self%common_data%error_message)) then
+          self%error_message = self%common_data%error_message
+          return
+        else
+          print*,'Internal LSODA error. Please raise an issue on the Github page: '// &
+                'https://github.com/Nicholaswogan/odepack'
+          stop 1
+        endif
+      endif
     endif
 
   contains

@@ -1272,23 +1272,27 @@ C-----------------------------------------------------------------------
       IF (LRW .GE. LENRW) GO TO 65
       INSUFR = 2
       LEWT = LEN1C + 1
+      if (common_data%iprint == 1) then
       MSG='DLSODA-  Warning.. RWORK length is sufficient for now, but  '
       CALL XERRWD (MSG, 60, 103, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
       MSG='      may not be later.  Integration will proceed anyway.   '
       CALL XERRWD (MSG, 60, 103, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
       MSG = '      Length needed is LENRW = I1, while LRW = I2.'
       CALL XERRWD (MSG, 50, 103, 0, 2, LENRW, LRW, 0, 0.0D0, 0.0D0)
+      endif
  65   LSAVF = LEWT + N
       LACOR = LSAVF + N
       INSUFI = 0
       IF (LIW .GE. LENIW) GO TO 70
       INSUFI = 2
+      if (common_data%iprint == 1) then
       MSG='DLSODA-  Warning.. IWORK length is sufficient for now, but  '
       CALL XERRWD (MSG, 60, 104, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
       MSG='      may not be later.  Integration will proceed anyway.   '
       CALL XERRWD (MSG, 60, 104, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
       MSG = '      Length needed is LENIW = I1, while LIW = I2.'
       CALL XERRWD (MSG, 50, 104, 0, 2, LENIW, LIW, 0, 0.0D0, 0.0D0)
+      endif
  70   CONTINUE
 C Check RTOL and ATOL for legality. ------------------------------------
       RTOLI = RTOL(1)
@@ -1466,6 +1470,7 @@ C-----------------------------------------------------------------------
  280  IF ((TN + H) .NE. TN) GO TO 290
       NHNIL = NHNIL + 1
       IF (NHNIL .GT. MXHNIL) GO TO 290
+      if (common_data%iprint == 1) then
       MSG = 'DLSODA-  Warning..Internal T (=R1) and H (=R2) are'
       CALL XERRWD (MSG, 50, 101, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
       MSG='      such that in the machine, T + H = T on the next step  '
@@ -1477,6 +1482,7 @@ C-----------------------------------------------------------------------
       CALL XERRWD (MSG, 50, 102, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
       MSG = '     It will not be issued again for this problem.'
       CALL XERRWD (MSG, 50, 102, 0, 1, MXHNIL, 0, 0, 0.0D0, 0.0D0)
+      endif
  290  CONTINUE
 C-----------------------------------------------------------------------
 C   CALL DSTODA(NEQ,Y,YH,NYH,YH,EWT,SAVF,ACOR,WM,IWM,F,JAC,DPRJA,DSOLSY)
@@ -1575,54 +1581,68 @@ C Then Y is loaded from YH and T is set to TN.
 C The optional outputs are loaded into the work arrays before returning.
 C-----------------------------------------------------------------------
 C The maximum number of steps was taken before reaching TOUT. ----------
- 500  MSG = 'DLSODA-  At current T (=R1), MXSTEP (=I1) steps   '
-      CALL XERRWD (MSG, 50, 201, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
-      MSG = '      taken on this call before reaching TOUT     '
-      CALL XERRWD (MSG, 50, 201, 0, 1, MXSTEP, 0, 1, TN, 0.0D0)
+C 500  MSG = 'DLSODA-  At current T (=R1), MXSTEP (=I1) steps   '
+C      CALL XERRWD (MSG, 50, 201, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C      MSG = '      taken on this call before reaching TOUT     '
+C      CALL XERRWD (MSG, 50, 201, 0, 1, MXSTEP, 0, 1, TN, 0.0D0)
+ 500  common_data%error_message =
+     1 'MXSTEP steps taken on this call before reaching TOUT.'
       ISTATE = -1
       GO TO 580
 C EWT(i) .le. 0.0 for some i (not at start of problem). ----------------
- 510  EWTI = RWORK(LEWT+I-1)
-      MSG = 'DLSODA-  At T (=R1), EWT(I1) has become R2 .le. 0.'
-      CALL XERRWD (MSG, 50, 202, 0, 1, I, 0, 2, TN, EWTI)
+C 510  EWTI = RWORK(LEWT+I-1)
+C      MSG = 'DLSODA-  At T (=R1), EWT(I1) has become R2 .le. 0.'
+C      CALL XERRWD (MSG, 50, 202, 0, 1, I, 0, 2, TN, EWTI)
+ 510  common_data%error_message =
+     1 'EWT(i) became zero for some i during the integration.'
       ISTATE = -6
       GO TO 580
 C Too much accuracy requested for machine precision. -------------------
- 520  MSG = 'DLSODA-  At T (=R1), too much accuracy requested  '
-      CALL XERRWD (MSG, 50, 203, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
-      MSG = '      for precision of machine..  See TOLSF (=R2) '
-      CALL XERRWD (MSG, 50, 203, 0, 0, 0, 0, 2, TN, TOLSF)
+C 520  MSG = 'DLSODA-  At T (=R1), too much accuracy requested  '
+C      CALL XERRWD (MSG, 50, 203, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C      MSG = '      for precision of machine..  See TOLSF (=R2) '
+C      CALL XERRWD (MSG, 50, 203, 0, 0, 0, 0, 2, TN, TOLSF)
+ 520  common_data%error_message =
+     1 'Too much accuracy requested for machine precision.'
       RWORK(14) = TOLSF
       ISTATE = -2
       GO TO 580
 C KFLAG = -1.  Error test failed repeatedly or with ABS(H) = HMIN. -----
- 530  MSG = 'DLSODA-  At T(=R1) and step size H(=R2), the error'
-      CALL XERRWD (MSG, 50, 204, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
-      MSG = '      test failed repeatedly or with ABS(H) = HMIN'
-      CALL XERRWD (MSG, 50, 204, 0, 0, 0, 0, 2, TN, H)
+C 530  MSG = 'DLSODA-  At T(=R1) and step size H(=R2), the error'
+C      CALL XERRWD (MSG, 50, 204, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C      MSG = '      test failed repeatedly or with ABS(H) = HMIN'
+C      CALL XERRWD (MSG, 50, 204, 0, 0, 0, 0, 2, TN, H)
+ 530  common_data%error_message =
+     1 'Error test failed repeatedly or with ABS(H) = HMIN.'
       ISTATE = -4
       GO TO 560
 C KFLAG = -2.  Convergence failed repeatedly or with ABS(H) = HMIN. ----
- 540  MSG = 'DLSODA-  At T (=R1) and step size H (=R2), the    '
-      CALL XERRWD (MSG, 50, 205, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
-      MSG = '      corrector convergence failed repeatedly     '
-      CALL XERRWD (MSG, 50, 205, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
-      MSG = '      or with ABS(H) = HMIN   '
-      CALL XERRWD (MSG, 30, 205, 0, 0, 0, 0, 2, TN, H)
+C 540  MSG = 'DLSODA-  At T (=R1) and step size H (=R2), the    '
+C      CALL XERRWD (MSG, 50, 205, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C      MSG = '      corrector convergence failed repeatedly     '
+C      CALL XERRWD (MSG, 50, 205, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C      MSG = '      or with ABS(H) = HMIN   '
+C      CALL XERRWD (MSG, 30, 205, 0, 0, 0, 0, 2, TN, H)
+ 540  common_data%error_message =
+     1 'Convergence failed repeatedly or with ABS(H) = HMIN.'
       ISTATE = -5
       GO TO 560
 C RWORK length too small to proceed. -----------------------------------
- 550  MSG = 'DLSODA-  At current T(=R1), RWORK length too small'
-      CALL XERRWD (MSG, 50, 206, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
-      MSG='      to proceed.  The integration was otherwise successful.'
-      CALL XERRWD (MSG, 60, 206, 0, 0, 0, 0, 1, TN, 0.0D0)
+C 550  MSG = 'DLSODA-  At current T(=R1), RWORK length too small'
+C      CALL XERRWD (MSG, 50, 206, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C      MSG='      to proceed.  The integration was otherwise successful.'
+C      CALL XERRWD (MSG, 60, 206, 0, 0, 0, 0, 1, TN, 0.0D0)
+ 550  common_data%error_message =
+     1 'RWORK length too small to proceed.'
       ISTATE = -7
       GO TO 580
 C IWORK length too small to proceed. -----------------------------------
- 555  MSG = 'DLSODA-  At current T(=R1), IWORK length too small'
-      CALL XERRWD (MSG, 50, 207, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
-      MSG='      to proceed.  The integration was otherwise successful.'
-      CALL XERRWD (MSG, 60, 207, 0, 0, 0, 0, 1, TN, 0.0D0)
+C 555  MSG = 'DLSODA-  At current T(=R1), IWORK length too small'
+C      CALL XERRWD (MSG, 50, 207, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C      MSG='      to proceed.  The integration was otherwise successful.'
+C      CALL XERRWD (MSG, 60, 207, 0, 0, 0, 0, 1, TN, 0.0D0)
+ 555  common_data%error_message =
+     1 'IWORK length too small to proceed.'
       ISTATE = -7
       GO TO 580
 C Compute IMXER if relevant. -------------------------------------------
@@ -1658,105 +1678,164 @@ C (ISTATE = -3), as detected before calling the core integrator.
 C First the error message routine is called.  If the illegal input
 C is a negative ISTATE, the run is aborted (apparent infinite loop).
 C-----------------------------------------------------------------------
- 601  MSG = 'DLSODA-  ISTATE (=I1) illegal.'
-      CALL XERRWD (MSG, 30, 1, 0, 1, ISTATE, 0, 0, 0.0D0, 0.0D0)
+C 601  MSG = 'DLSODA-  ISTATE (=I1) illegal.'
+C      CALL XERRWD (MSG, 30, 1, 0, 1, ISTATE, 0, 0, 0.0D0, 0.0D0)
+ 601  common_data%error_message = 'ISTATE has illegal value.'
       IF (ISTATE .LT. 0) GO TO 800
       GO TO 700
- 602  MSG = 'DLSODA-  ITASK (=I1) illegal. '
-      CALL XERRWD (MSG, 30, 2, 0, 1, ITASK, 0, 0, 0.0D0, 0.0D0)
+C 602  MSG = 'DLSODA-  ITASK (=I1) illegal. '
+C      CALL XERRWD (MSG, 30, 2, 0, 1, ITASK, 0, 0, 0.0D0, 0.0D0)
+ 602  common_data%error_message = 'ITASK has illegal value.'
       GO TO 700
- 603  MSG = 'DLSODA-  ISTATE .gt. 1 but DLSODA not initialized.'
-      CALL XERRWD (MSG, 50, 3, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C 603  MSG = 'DLSODA-  ISTATE .gt. 1 but DLSODA not initialized.'
+C      CALL XERRWD (MSG, 50, 3, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+ 603  common_data%error_message = 
+     1 'ISTATE > 1 but LSODA not initialized.'
       GO TO 700
- 604  MSG = 'DLSODA-  NEQ (=I1) .lt. 1     '
-      CALL XERRWD (MSG, 30, 4, 0, 1, NEQ(1), 0, 0, 0.0D0, 0.0D0)
+C 604  MSG = 'DLSODA-  NEQ (=I1) .lt. 1     '
+C      CALL XERRWD (MSG, 30, 4, 0, 1, NEQ(1), 0, 0, 0.0D0, 0.0D0)
+ 604  common_data%error_message = 
+     1 'NEQ < 1.'
       GO TO 700
- 605  MSG = 'DLSODA-  ISTATE = 3 and NEQ increased (I1 to I2). '
-      CALL XERRWD (MSG, 50, 5, 0, 2, N, NEQ(1), 0, 0.0D0, 0.0D0)
+C 605  MSG = 'DLSODA-  ISTATE = 3 and NEQ increased (I1 to I2). '
+C      CALL XERRWD (MSG, 50, 5, 0, 2, N, NEQ(1), 0, 0.0D0, 0.0D0)
+ 605  common_data%error_message = 
+     1 'ISTATE == 3 and NEQ increased.'
       GO TO 700
- 606  MSG = 'DLSODA-  ITOL (=I1) illegal.  '
-      CALL XERRWD (MSG, 30, 6, 0, 1, ITOL, 0, 0, 0.0D0, 0.0D0)
+C 606  MSG = 'DLSODA-  ITOL (=I1) illegal.  '
+C      CALL XERRWD (MSG, 30, 6, 0, 1, ITOL, 0, 0, 0.0D0, 0.0D0)
+ 606  common_data%error_message = 
+     1 'ITOL has illegal value.'
       GO TO 700
- 607  MSG = 'DLSODA-  IOPT (=I1) illegal.  '
-      CALL XERRWD (MSG, 30, 7, 0, 1, IOPT, 0, 0, 0.0D0, 0.0D0)
+C 607  MSG = 'DLSODA-  IOPT (=I1) illegal.  '
+C      CALL XERRWD (MSG, 30, 7, 0, 1, IOPT, 0, 0, 0.0D0, 0.0D0)
+ 607  common_data%error_message = 
+     1 'IOPT has illegal value.'
       GO TO 700
- 608  MSG = 'DLSODA-  JT (=I1) illegal.    '
-      CALL XERRWD (MSG, 30, 8, 0, 1, JT, 0, 0, 0.0D0, 0.0D0)
+C 608  MSG = 'DLSODA-  JT (=I1) illegal.    '
+C      CALL XERRWD (MSG, 30, 8, 0, 1, JT, 0, 0, 0.0D0, 0.0D0)
+ 608  common_data%error_message = 
+     1 'JT has illegal value.'
       GO TO 700
- 609  MSG = 'DLSODA-  ML (=I1) illegal: .lt.0 or .ge.NEQ (=I2) '
-      CALL XERRWD (MSG, 50, 9, 0, 2, ML, NEQ(1), 0, 0.0D0, 0.0D0)
+C 609  MSG = 'DLSODA-  ML (=I1) illegal: .lt.0 or .ge.NEQ (=I2) '
+C      CALL XERRWD (MSG, 50, 9, 0, 2, ML, NEQ(1), 0, 0.0D0, 0.0D0)
+ 609  common_data%error_message = 
+     1 'ML has illegal value.'
       GO TO 700
- 610  MSG = 'DLSODA-  MU (=I1) illegal: .lt.0 or .ge.NEQ (=I2) '
-      CALL XERRWD (MSG, 50, 10, 0, 2, MU, NEQ(1), 0, 0.0D0, 0.0D0)
+C 610  MSG = 'DLSODA-  MU (=I1) illegal: .lt.0 or .ge.NEQ (=I2) '
+C      CALL XERRWD (MSG, 50, 10, 0, 2, MU, NEQ(1), 0, 0.0D0, 0.0D0)
+ 610  common_data%error_message = 
+     1 'MU has illegal value.'
       GO TO 700
- 611  MSG = 'DLSODA-  IXPR (=I1) illegal.  '
-      CALL XERRWD (MSG, 30, 11, 0, 1, IXPR, 0, 0, 0.0D0, 0.0D0)
+C 611  MSG = 'DLSODA-  IXPR (=I1) illegal.  '
+C      CALL XERRWD (MSG, 30, 11, 0, 1, IXPR, 0, 0, 0.0D0, 0.0D0)
+ 611  common_data%error_message = 
+     1 'IXPR has illegal value.'
       GO TO 700
- 612  MSG = 'DLSODA-  MXSTEP (=I1) .lt. 0  '
-      CALL XERRWD (MSG, 30, 12, 0, 1, MXSTEP, 0, 0, 0.0D0, 0.0D0)
+C 612  MSG = 'DLSODA-  MXSTEP (=I1) .lt. 0  '
+C      CALL XERRWD (MSG, 30, 12, 0, 1, MXSTEP, 0, 0, 0.0D0, 0.0D0)
+ 612  common_data%error_message = 
+     1 'MXSTEP < 0.'
       GO TO 700
- 613  MSG = 'DLSODA-  MXHNIL (=I1) .lt. 0  '
-      CALL XERRWD (MSG, 30, 13, 0, 1, MXHNIL, 0, 0, 0.0D0, 0.0D0)
+C 613  MSG = 'DLSODA-  MXHNIL (=I1) .lt. 0  '
+C      CALL XERRWD (MSG, 30, 13, 0, 1, MXHNIL, 0, 0, 0.0D0, 0.0D0)
+ 613  common_data%error_message = 
+     1 'MXHNIL < 0'
       GO TO 700
- 614  MSG = 'DLSODA-  TOUT (=R1) behind T (=R2)      '
-      CALL XERRWD (MSG, 40, 14, 0, 0, 0, 0, 2, TOUT, T)
-      MSG = '      Integration direction is given by H0 (=R1)  '
-      CALL XERRWD (MSG, 50, 14, 0, 0, 0, 0, 1, H0, 0.0D0)
+C 614  MSG = 'DLSODA-  TOUT (=R1) behind T (=R2)      '
+C      CALL XERRWD (MSG, 40, 14, 0, 0, 0, 0, 2, TOUT, T)
+C      MSG = '      Integration direction is given by H0 (=R1)  '
+C      CALL XERRWD (MSG, 50, 14, 0, 0, 0, 0, 1, H0, 0.0D0)
+ 614  common_data%error_message = 
+     1 'TOUT and T imply integration direction incompatible with H0'
       GO TO 700
- 615  MSG = 'DLSODA-  HMAX (=R1) .lt. 0.0  '
-      CALL XERRWD (MSG, 30, 15, 0, 0, 0, 0, 1, HMAX, 0.0D0)
+C 615  MSG = 'DLSODA-  HMAX (=R1) .lt. 0.0  '
+C      CALL XERRWD (MSG, 30, 15, 0, 0, 0, 0, 1, HMAX, 0.0D0)
+ 615  common_data%error_message = 
+     1 'HMAX < 0'
       GO TO 700
- 616  MSG = 'DLSODA-  HMIN (=R1) .lt. 0.0  '
-      CALL XERRWD (MSG, 30, 16, 0, 0, 0, 0, 1, HMIN, 0.0D0)
+C 616  MSG = 'DLSODA-  HMIN (=R1) .lt. 0.0  '
+C      CALL XERRWD (MSG, 30, 16, 0, 0, 0, 0, 1, HMIN, 0.0D0)
+ 616  common_data%error_message = 
+     1 'HMIN < 0.0'
       GO TO 700
- 617  MSG='DLSODA-  RWORK length needed, LENRW (=I1), exceeds LRW (=I2)'
-      CALL XERRWD (MSG, 60, 17, 0, 2, LENRW, LRW, 0, 0.0D0, 0.0D0)
+C 617  MSG='DLSODA-  RWORK length needed, LENRW (=I1), exceeds LRW (=I2)'
+C      CALL XERRWD (MSG, 60, 17, 0, 2, LENRW, LRW, 0, 0.0D0, 0.0D0)
+ 617  common_data%error_message = 
+     1 'RWORK is not long enough.'
       GO TO 700
- 618  MSG='DLSODA-  IWORK length needed, LENIW (=I1), exceeds LIW (=I2)'
-      CALL XERRWD (MSG, 60, 18, 0, 2, LENIW, LIW, 0, 0.0D0, 0.0D0)
+C 618  MSG='DLSODA-  IWORK length needed, LENIW (=I1), exceeds LIW (=I2)'
+C      CALL XERRWD (MSG, 60, 18, 0, 2, LENIW, LIW, 0, 0.0D0, 0.0D0)
+ 618  common_data%error_message = 
+     1 'IWORK is not long enough.'
       GO TO 700
- 619  MSG = 'DLSODA-  RTOL(I1) is R1 .lt. 0.0        '
-      CALL XERRWD (MSG, 40, 19, 0, 1, I, 0, 1, RTOLI, 0.0D0)
+C 619  MSG = 'DLSODA-  RTOL(I1) is R1 .lt. 0.0        '
+C      CALL XERRWD (MSG, 40, 19, 0, 1, I, 0, 1, RTOLI, 0.0D0)
+ 619  common_data%error_message = 
+     1 'RTOL < 0.0'
       GO TO 700
- 620  MSG = 'DLSODA-  ATOL(I1) is R1 .lt. 0.0        '
-      CALL XERRWD (MSG, 40, 20, 0, 1, I, 0, 1, ATOLI, 0.0D0)
+C 620  MSG = 'DLSODA-  ATOL(I1) is R1 .lt. 0.0        '
+C      CALL XERRWD (MSG, 40, 20, 0, 1, I, 0, 1, ATOLI, 0.0D0)
+ 620  common_data%error_message = 
+     1 'ATOL < 0.0'
       GO TO 700
  621  EWTI = RWORK(LEWT+I-1)
-      MSG = 'DLSODA-  EWT(I1) is R1 .le. 0.0         '
-      CALL XERRWD (MSG, 40, 21, 0, 1, I, 0, 1, EWTI, 0.0D0)
+C      MSG = 'DLSODA-  EWT(I1) is R1 .le. 0.0         '
+C      CALL XERRWD (MSG, 40, 21, 0, 1, I, 0, 1, EWTI, 0.0D0)
+      common_data%error_message = 
+     1 'EWT(i) for some i is < 0.0'
       GO TO 700
- 622  MSG='DLSODA-  TOUT(=R1) too close to T(=R2) to start integration.'
-      CALL XERRWD (MSG, 60, 22, 0, 0, 0, 0, 2, TOUT, T)
+C 622  MSG='DLSODA-  TOUT(=R1) too close to T(=R2) to start integration.'
+C      CALL XERRWD (MSG, 60, 22, 0, 0, 0, 0, 2, TOUT, T)
+ 622  common_data%error_message = 
+     1 'TOUT is too close to T to start integration.'
       GO TO 700
- 623  MSG='DLSODA-  ITASK = I1 and TOUT (=R1) behind TCUR - HU (= R2)  '
-      CALL XERRWD (MSG, 60, 23, 0, 1, ITASK, 0, 2, TOUT, TP)
+C 623  MSG='DLSODA-  ITASK = I1 and TOUT (=R1) behind TCUR - HU (= R2)  '
+C      CALL XERRWD (MSG, 60, 23, 0, 1, ITASK, 0, 2, TOUT, TP)
+ 623  common_data%error_message = 
+     1 'TOUT switches the direction of integration.'
       GO TO 700
- 624  MSG='DLSODA-  ITASK = 4 or 5 and TCRIT (=R1) behind TCUR (=R2)   '
-      CALL XERRWD (MSG, 60, 24, 0, 0, 0, 0, 2, TCRIT, TN)
+C 624  MSG='DLSODA-  ITASK = 4 or 5 and TCRIT (=R1) behind TCUR (=R2)   '
+C      CALL XERRWD (MSG, 60, 24, 0, 0, 0, 0, 2, TCRIT, TN)
+ 624  common_data%error_message = 
+     1 'ITASK = 4 or 5 and TCRIT behind TCUR.'
       GO TO 700
- 625  MSG='DLSODA-  ITASK = 4 or 5 and TCRIT (=R1) behind TOUT (=R2)   '
-      CALL XERRWD (MSG, 60, 25, 0, 0, 0, 0, 2, TCRIT, TOUT)
+C 625  MSG='DLSODA-  ITASK = 4 or 5 and TCRIT (=R1) behind TOUT (=R2)   '
+C      CALL XERRWD (MSG, 60, 25, 0, 0, 0, 0, 2, TCRIT, TOUT)
+ 625  common_data%error_message = 
+     1 'ITASK = 4 or 5 and TCRIT behind TOUT.'
       GO TO 700
- 626  MSG = 'DLSODA-  At start of problem, too much accuracy   '
-      CALL XERRWD (MSG, 50, 26, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
-      MSG='      requested for precision of machine..  See TOLSF (=R1) '
-      CALL XERRWD (MSG, 60, 26, 0, 0, 0, 0, 1, TOLSF, 0.0D0)
+C 626  MSG = 'DLSODA-  At start of problem, too much accuracy   '
+C      CALL XERRWD (MSG, 50, 26, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C      MSG='      requested for precision of machine..  See TOLSF (=R1) '
+C      CALL XERRWD (MSG, 60, 26, 0, 0, 0, 0, 1, TOLSF, 0.0D0)
+ 626  common_data%error_message = 
+     1 'At start of problem, too much accuracy is requested.'
       RWORK(14) = TOLSF
       GO TO 700
- 627  MSG = 'DLSODA-  Trouble in DINTDY.  ITASK = I1, TOUT = R1'
-      CALL XERRWD (MSG, 50, 27, 0, 1, ITASK, 0, 1, TOUT, 0.0D0)
+C 627  MSG = 'DLSODA-  Trouble in DINTDY.  ITASK = I1, TOUT = R1'
+C      CALL XERRWD (MSG, 50, 27, 0, 1, ITASK, 0, 1, TOUT, 0.0D0)
+ 627  common_data%error_message = 
+     1 'Trouble in DINTDY.'
       GO TO 700
- 628  MSG = 'DLSODA-  MXORDN (=I1) .lt. 0  '
-      CALL XERRWD (MSG, 30, 28, 0, 1, MXORDN, 0, 0, 0.0D0, 0.0D0)
+C 628  MSG = 'DLSODA-  MXORDN (=I1) .lt. 0  '
+C      CALL XERRWD (MSG, 30, 28, 0, 1, MXORDN, 0, 0, 0.0D0, 0.0D0)
+ 628  common_data%error_message = 
+     1 'MXORDN < 0'
       GO TO 700
- 629  MSG = 'DLSODA-  MXORDS (=I1) .lt. 0  '
-      CALL XERRWD (MSG, 30, 29, 0, 1, MXORDS, 0, 0, 0.0D0, 0.0D0)
+C 629  MSG = 'DLSODA-  MXORDS (=I1) .lt. 0  '
+C      CALL XERRWD (MSG, 30, 29, 0, 1, MXORDS, 0, 0, 0.0D0, 0.0D0)
+ 629  common_data%error_message = 
+     1 'MXORDS < 0'
 C
  700  ISTATE = -3
       RETURN
 C
- 800  MSG = 'DLSODA-  Run aborted.. apparent infinite loop.    '
-      CALL XERRWD (MSG, 50, 303, 2, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C 800  MSG = 'DLSODA-  Run aborted.. apparent infinite loop.    '
+C      CALL XERRWD (MSG, 50, 303, 2, 0, 0, 0, 0, 0.0D0, 0.0D0)
+ 800  common_data%error_message = 
+     1 common_data%error_message//
+     1 ' Run aborted. apparent infinite loop.'
       RETURN
 C----------------------- End of Subroutine DLSODA ----------------------
       END
@@ -3211,23 +3290,27 @@ C If ISTATE = 3 and NG was changed, shift YH to its new location. ------
       IF (LRW .GE. LENRW) GO TO 65
       INSUFR = 2
       LEWT = LEN1C + 1
+      if (common_data%iprint == 1) then
       MSG='DLSODAR-  Warning.. RWORK length is sufficient for now, but '
       CALL XERRWD (MSG, 60, 103, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
       MSG='      may not be later.  Integration will proceed anyway.   '
       CALL XERRWD (MSG, 60, 103, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
       MSG = '      Length needed is LENRW = I1, while LRW = I2.'
       CALL XERRWD (MSG, 50, 103, 0, 2, LENRW, LRW, 0, 0.0D0, 0.0D0)
+      endif
  65   LSAVF = LEWT + N
       LACOR = LSAVF + N
       INSUFI = 0
       IF (LIW .GE. LENIW) GO TO 70
       INSUFI = 2
+      if (common_data%iprint == 1) then
       MSG='DLSODAR-  Warning.. IWORK length is sufficient for now, but '
       CALL XERRWD (MSG, 60, 104, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
       MSG='      may not be later.  Integration will proceed anyway.   '
       CALL XERRWD (MSG, 60, 104, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
       MSG = '      Length needed is LENIW = I1, while LIW = I2.'
       CALL XERRWD (MSG, 50, 104, 0, 2, LENIW, LIW, 0, 0.0D0, 0.0D0)
+      endif
  70   CONTINUE
 C Check RTOL and ATOL for legality. ------------------------------------
       RTOLI = RTOL(1)
@@ -3435,6 +3518,7 @@ C-----------------------------------------------------------------------
  280  IF ((TN + H) .NE. TN) GO TO 290
       NHNIL = NHNIL + 1
       IF (NHNIL .GT. MXHNIL) GO TO 290
+      if (common_data%iprint == 1) then
       MSG = 'DLSODAR-  Warning..Internal T(=R1) and H(=R2) are '
       CALL XERRWD (MSG, 50, 101, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
       MSG='      such that in the machine, T + H = T on the next step  '
@@ -3446,6 +3530,7 @@ C-----------------------------------------------------------------------
       CALL XERRWD (MSG, 50, 102, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
       MSG = '     It will not be issued again for this problem.'
       CALL XERRWD (MSG, 50, 102, 0, 1, MXHNIL, 0, 0, 0.0D0, 0.0D0)
+      endif
  290  CONTINUE
 C-----------------------------------------------------------------------
 C   CALL DSTODA(NEQ,Y,YH,NYH,YH,EWT,SAVF,ACOR,WM,IWM,F,JAC,DPRJA,DSOLSY)
@@ -3561,54 +3646,68 @@ C Then Y is loaded from YH and T is set to TN.
 C The optional outputs are loaded into the work arrays before returning.
 C-----------------------------------------------------------------------
 C The maximum number of steps was taken before reaching TOUT. ----------
- 500  MSG = 'DLSODAR-  At current T (=R1), MXSTEP (=I1) steps  '
-      CALL XERRWD (MSG, 50, 201, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
-      MSG = '      taken on this call before reaching TOUT     '
-      CALL XERRWD (MSG, 50, 201, 0, 1, MXSTEP, 0, 1, TN, 0.0D0)
+C 500  MSG = 'DLSODA-  At current T (=R1), MXSTEP (=I1) steps   '
+C      CALL XERRWD (MSG, 50, 201, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C      MSG = '      taken on this call before reaching TOUT     '
+C      CALL XERRWD (MSG, 50, 201, 0, 1, MXSTEP, 0, 1, TN, 0.0D0)
+ 500  common_data%error_message =
+     1 'MXSTEP steps taken on this call before reaching TOUT.'
       ISTATE = -1
       GO TO 580
 C EWT(i) .le. 0.0 for some i (not at start of problem). ----------------
- 510  EWTI = RWORK(LEWT+I-1)
-      MSG = 'DLSODAR-  At T(=R1), EWT(I1) has become R2 .le. 0.'
-      CALL XERRWD (MSG, 50, 202, 0, 1, I, 0, 2, TN, EWTI)
+C 510  EWTI = RWORK(LEWT+I-1)
+C      MSG = 'DLSODA-  At T (=R1), EWT(I1) has become R2 .le. 0.'
+C      CALL XERRWD (MSG, 50, 202, 0, 1, I, 0, 2, TN, EWTI)
+ 510  common_data%error_message =
+     1 'EWT(i) became zero for some i during the integration.'
       ISTATE = -6
       GO TO 580
 C Too much accuracy requested for machine precision. -------------------
- 520  MSG = 'DLSODAR-  At T (=R1), too much accuracy requested '
-      CALL XERRWD (MSG, 50, 203, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
-      MSG = '      for precision of machine..  See TOLSF (=R2) '
-      CALL XERRWD (MSG, 50, 203, 0, 0, 0, 0, 2, TN, TOLSF)
+C 520  MSG = 'DLSODA-  At T (=R1), too much accuracy requested  '
+C      CALL XERRWD (MSG, 50, 203, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C      MSG = '      for precision of machine..  See TOLSF (=R2) '
+C      CALL XERRWD (MSG, 50, 203, 0, 0, 0, 0, 2, TN, TOLSF)
+ 520  common_data%error_message =
+     1 'Too much accuracy requested for machine precision.'
       RWORK(14) = TOLSF
       ISTATE = -2
       GO TO 580
 C KFLAG = -1.  Error test failed repeatedly or with ABS(H) = HMIN. -----
- 530  MSG = 'DLSODAR-  At T(=R1), step size H(=R2), the error  '
-      CALL XERRWD (MSG, 50, 204, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
-      MSG = '      test failed repeatedly or with ABS(H) = HMIN'
-      CALL XERRWD (MSG, 50, 204, 0, 0, 0, 0, 2, TN, H)
+C 530  MSG = 'DLSODA-  At T(=R1) and step size H(=R2), the error'
+C      CALL XERRWD (MSG, 50, 204, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C      MSG = '      test failed repeatedly or with ABS(H) = HMIN'
+C      CALL XERRWD (MSG, 50, 204, 0, 0, 0, 0, 2, TN, H)
+ 530  common_data%error_message =
+     1 'Error test failed repeatedly or with ABS(H) = HMIN.'
       ISTATE = -4
       GO TO 560
 C KFLAG = -2.  Convergence failed repeatedly or with ABS(H) = HMIN. ----
- 540  MSG = 'DLSODAR-  At T (=R1) and step size H (=R2), the   '
-      CALL XERRWD (MSG, 50, 205, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
-      MSG = '      corrector convergence failed repeatedly     '
-      CALL XERRWD (MSG, 50, 205, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
-      MSG = '      or with ABS(H) = HMIN   '
-      CALL XERRWD (MSG, 30, 205, 0, 0, 0, 0, 2, TN, H)
+C 540  MSG = 'DLSODA-  At T (=R1) and step size H (=R2), the    '
+C      CALL XERRWD (MSG, 50, 205, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C      MSG = '      corrector convergence failed repeatedly     '
+C      CALL XERRWD (MSG, 50, 205, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C      MSG = '      or with ABS(H) = HMIN   '
+C      CALL XERRWD (MSG, 30, 205, 0, 0, 0, 0, 2, TN, H)
+ 540  common_data%error_message =
+     1 'Convergence failed repeatedly or with ABS(H) = HMIN.'
       ISTATE = -5
       GO TO 560
 C RWORK length too small to proceed. -----------------------------------
- 550  MSG = 'DLSODAR- At current T(=R1), RWORK length too small'
-      CALL XERRWD (MSG, 50, 206, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
-      MSG='      to proceed.  The integration was otherwise successful.'
-      CALL XERRWD (MSG, 60, 206, 0, 0, 0, 0, 1, TN, 0.0D0)
+C 550  MSG = 'DLSODA-  At current T(=R1), RWORK length too small'
+C      CALL XERRWD (MSG, 50, 206, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C      MSG='      to proceed.  The integration was otherwise successful.'
+C      CALL XERRWD (MSG, 60, 206, 0, 0, 0, 0, 1, TN, 0.0D0)
+ 550  common_data%error_message =
+     1 'RWORK length too small to proceed.'
       ISTATE = -7
       GO TO 580
 C IWORK length too small to proceed. -----------------------------------
- 555  MSG = 'DLSODAR- At current T(=R1), IWORK length too small'
-      CALL XERRWD (MSG, 50, 207, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
-      MSG='      to proceed.  The integration was otherwise successful.'
-      CALL XERRWD (MSG, 60, 207, 0, 0, 0, 0, 1, TN, 0.0D0)
+C 555  MSG = 'DLSODA-  At current T(=R1), IWORK length too small'
+C      CALL XERRWD (MSG, 50, 207, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C      MSG='      to proceed.  The integration was otherwise successful.'
+C      CALL XERRWD (MSG, 60, 207, 0, 0, 0, 0, 1, TN, 0.0D0)
+ 555  common_data%error_message =
+     1 'IWORK length too small to proceed.'
       ISTATE = -7
       GO TO 580
 C Compute IMXER if relevant. -------------------------------------------
@@ -3646,118 +3745,185 @@ C (ISTATE = -3), as detected before calling the core integrator.
 C First the error message routine is called.  If the illegal input
 C is a negative ISTATE, the run is aborted (apparent infinite loop).
 C-----------------------------------------------------------------------
- 601  MSG = 'DLSODAR-  ISTATE(=I1) illegal.'
-      CALL XERRWD (MSG, 30, 1, 0, 1, ISTATE, 0, 0, 0.0D0, 0.0D0)
+C 601  MSG = 'DLSODA-  ISTATE (=I1) illegal.'
+C      CALL XERRWD (MSG, 30, 1, 0, 1, ISTATE, 0, 0, 0.0D0, 0.0D0)
+ 601  common_data%error_message = 'ISTATE has illegal value.'
       IF (ISTATE .LT. 0) GO TO 800
       GO TO 700
- 602  MSG = 'DLSODAR-  ITASK (=I1) illegal.'
-      CALL XERRWD (MSG, 30, 2, 0, 1, ITASK, 0, 0, 0.0D0, 0.0D0)
+C 602  MSG = 'DLSODA-  ITASK (=I1) illegal. '
+C      CALL XERRWD (MSG, 30, 2, 0, 1, ITASK, 0, 0, 0.0D0, 0.0D0)
+ 602  common_data%error_message = 'ITASK has illegal value.'
       GO TO 700
- 603  MSG = 'DLSODAR-  ISTATE.gt.1 but DLSODAR not initialized.'
-      CALL XERRWD (MSG, 50, 3, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C 603  MSG = 'DLSODA-  ISTATE .gt. 1 but DLSODA not initialized.'
+C      CALL XERRWD (MSG, 50, 3, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+ 603  common_data%error_message = 
+     1 'ISTATE > 1 but LSODA not initialized.'
       GO TO 700
- 604  MSG = 'DLSODAR-  NEQ (=I1) .lt. 1    '
-      CALL XERRWD (MSG, 30, 4, 0, 1, NEQ(1), 0, 0, 0.0D0, 0.0D0)
+C 604  MSG = 'DLSODA-  NEQ (=I1) .lt. 1     '
+C      CALL XERRWD (MSG, 30, 4, 0, 1, NEQ(1), 0, 0, 0.0D0, 0.0D0)
+ 604  common_data%error_message = 
+     1 'NEQ < 1.'
       GO TO 700
- 605  MSG = 'DLSODAR-  ISTATE = 3 and NEQ increased (I1 to I2).'
-      CALL XERRWD (MSG, 50, 5, 0, 2, N, NEQ(1), 0, 0.0D0, 0.0D0)
+C 605  MSG = 'DLSODA-  ISTATE = 3 and NEQ increased (I1 to I2). '
+C      CALL XERRWD (MSG, 50, 5, 0, 2, N, NEQ(1), 0, 0.0D0, 0.0D0)
+ 605  common_data%error_message = 
+     1 'ISTATE == 3 and NEQ increased.'
       GO TO 700
- 606  MSG = 'DLSODAR-  ITOL (=I1) illegal. '
-      CALL XERRWD (MSG, 30, 6, 0, 1, ITOL, 0, 0, 0.0D0, 0.0D0)
+C 606  MSG = 'DLSODA-  ITOL (=I1) illegal.  '
+C      CALL XERRWD (MSG, 30, 6, 0, 1, ITOL, 0, 0, 0.0D0, 0.0D0)
+ 606  common_data%error_message = 
+     1 'ITOL has illegal value.'
       GO TO 700
- 607  MSG = 'DLSODAR-  IOPT (=I1) illegal. '
-      CALL XERRWD (MSG, 30, 7, 0, 1, IOPT, 0, 0, 0.0D0, 0.0D0)
+C 607  MSG = 'DLSODA-  IOPT (=I1) illegal.  '
+C      CALL XERRWD (MSG, 30, 7, 0, 1, IOPT, 0, 0, 0.0D0, 0.0D0)
+ 607  common_data%error_message = 
+     1 'IOPT has illegal value.'
       GO TO 700
- 608  MSG = 'DLSODAR-  JT (=I1) illegal.   '
-      CALL XERRWD (MSG, 30, 8, 0, 1, JT, 0, 0, 0.0D0, 0.0D0)
+C 608  MSG = 'DLSODA-  JT (=I1) illegal.    '
+C      CALL XERRWD (MSG, 30, 8, 0, 1, JT, 0, 0, 0.0D0, 0.0D0)
+ 608  common_data%error_message = 
+     1 'JT has illegal value.'
       GO TO 700
- 609  MSG = 'DLSODAR-  ML (=I1) illegal: .lt.0 or .ge.NEQ (=I2)'
-      CALL XERRWD (MSG, 50, 9, 0, 2, ML, NEQ(1), 0, 0.0D0, 0.0D0)
+C 609  MSG = 'DLSODA-  ML (=I1) illegal: .lt.0 or .ge.NEQ (=I2) '
+C      CALL XERRWD (MSG, 50, 9, 0, 2, ML, NEQ(1), 0, 0.0D0, 0.0D0)
+ 609  common_data%error_message = 
+     1 'ML has illegal value.'
       GO TO 700
- 610  MSG = 'DLSODAR-  MU (=I1) illegal: .lt.0 or .ge.NEQ (=I2)'
-      CALL XERRWD (MSG, 50, 10, 0, 2, MU, NEQ(1), 0, 0.0D0, 0.0D0)
+C 610  MSG = 'DLSODA-  MU (=I1) illegal: .lt.0 or .ge.NEQ (=I2) '
+C      CALL XERRWD (MSG, 50, 10, 0, 2, MU, NEQ(1), 0, 0.0D0, 0.0D0)
+ 610  common_data%error_message = 
+     1 'MU has illegal value.'
       GO TO 700
- 611  MSG = 'DLSODAR-  IXPR (=I1) illegal. '
-      CALL XERRWD (MSG, 30, 11, 0, 1, IXPR, 0, 0, 0.0D0, 0.0D0)
+C 611  MSG = 'DLSODA-  IXPR (=I1) illegal.  '
+C      CALL XERRWD (MSG, 30, 11, 0, 1, IXPR, 0, 0, 0.0D0, 0.0D0)
+ 611  common_data%error_message = 
+     1 'IXPR has illegal value.'
       GO TO 700
- 612  MSG = 'DLSODAR-  MXSTEP (=I1) .lt. 0 '
-      CALL XERRWD (MSG, 30, 12, 0, 1, MXSTEP, 0, 0, 0.0D0, 0.0D0)
+C 612  MSG = 'DLSODA-  MXSTEP (=I1) .lt. 0  '
+C      CALL XERRWD (MSG, 30, 12, 0, 1, MXSTEP, 0, 0, 0.0D0, 0.0D0)
+ 612  common_data%error_message = 
+     1 'MXSTEP < 0.'
       GO TO 700
- 613  MSG = 'DLSODAR-  MXHNIL (=I1) .lt. 0 '
-      CALL XERRWD (MSG, 30, 13, 0, 1, MXHNIL, 0, 0, 0.0D0, 0.0D0)
+C 613  MSG = 'DLSODA-  MXHNIL (=I1) .lt. 0  '
+C      CALL XERRWD (MSG, 30, 13, 0, 1, MXHNIL, 0, 0, 0.0D0, 0.0D0)
+ 613  common_data%error_message = 
+     1 'MXHNIL < 0'
       GO TO 700
- 614  MSG = 'DLSODAR-  TOUT (=R1) behind T (=R2)     '
-      CALL XERRWD (MSG, 40, 14, 0, 0, 0, 0, 2, TOUT, T)
-      MSG = '      Integration direction is given by H0 (=R1)  '
-      CALL XERRWD (MSG, 50, 14, 0, 0, 0, 0, 1, H0, 0.0D0)
+C 614  MSG = 'DLSODA-  TOUT (=R1) behind T (=R2)      '
+C      CALL XERRWD (MSG, 40, 14, 0, 0, 0, 0, 2, TOUT, T)
+C      MSG = '      Integration direction is given by H0 (=R1)  '
+C      CALL XERRWD (MSG, 50, 14, 0, 0, 0, 0, 1, H0, 0.0D0)
+ 614  common_data%error_message = 
+     1 'TOUT and T imply integration direction incompatible with H0'
       GO TO 700
- 615  MSG = 'DLSODAR-  HMAX (=R1) .lt. 0.0 '
-      CALL XERRWD (MSG, 30, 15, 0, 0, 0, 0, 1, HMAX, 0.0D0)
+C 615  MSG = 'DLSODA-  HMAX (=R1) .lt. 0.0  '
+C      CALL XERRWD (MSG, 30, 15, 0, 0, 0, 0, 1, HMAX, 0.0D0)
+ 615  common_data%error_message = 
+     1 'HMAX < 0'
       GO TO 700
- 616  MSG = 'DLSODAR-  HMIN (=R1) .lt. 0.0 '
-      CALL XERRWD (MSG, 30, 16, 0, 0, 0, 0, 1, HMIN, 0.0D0)
+C 616  MSG = 'DLSODA-  HMIN (=R1) .lt. 0.0  '
+C      CALL XERRWD (MSG, 30, 16, 0, 0, 0, 0, 1, HMIN, 0.0D0)
+ 616  common_data%error_message = 
+     1 'HMIN < 0.0'
       GO TO 700
- 617  MSG='DLSODAR-  RWORK length needed, LENRW(=I1), exceeds LRW(=I2) '
-      CALL XERRWD (MSG, 60, 17, 0, 2, LENRW, LRW, 0, 0.0D0, 0.0D0)
+C 617  MSG='DLSODA-  RWORK length needed, LENRW (=I1), exceeds LRW (=I2)'
+C      CALL XERRWD (MSG, 60, 17, 0, 2, LENRW, LRW, 0, 0.0D0, 0.0D0)
+ 617  common_data%error_message = 
+     1 'RWORK is not long enough.'
       GO TO 700
- 618  MSG='DLSODAR-  IWORK length needed, LENIW(=I1), exceeds LIW(=I2) '
-      CALL XERRWD (MSG, 60, 18, 0, 2, LENIW, LIW, 0, 0.0D0, 0.0D0)
+C 618  MSG='DLSODA-  IWORK length needed, LENIW (=I1), exceeds LIW (=I2)'
+C      CALL XERRWD (MSG, 60, 18, 0, 2, LENIW, LIW, 0, 0.0D0, 0.0D0)
+ 618  common_data%error_message = 
+     1 'IWORK is not long enough.'
       GO TO 700
- 619  MSG = 'DLSODAR-  RTOL(I1) is R1 .lt. 0.0       '
-      CALL XERRWD (MSG, 40, 19, 0, 1, I, 0, 1, RTOLI, 0.0D0)
+C 619  MSG = 'DLSODA-  RTOL(I1) is R1 .lt. 0.0        '
+C      CALL XERRWD (MSG, 40, 19, 0, 1, I, 0, 1, RTOLI, 0.0D0)
+ 619  common_data%error_message = 
+     1 'RTOL < 0.0'
       GO TO 700
- 620  MSG = 'DLSODAR-  ATOL(I1) is R1 .lt. 0.0       '
-      CALL XERRWD (MSG, 40, 20, 0, 1, I, 0, 1, ATOLI, 0.0D0)
+C 620  MSG = 'DLSODA-  ATOL(I1) is R1 .lt. 0.0        '
+C      CALL XERRWD (MSG, 40, 20, 0, 1, I, 0, 1, ATOLI, 0.0D0)
+ 620  common_data%error_message = 
+     1 'ATOL < 0.0'
       GO TO 700
  621  EWTI = RWORK(LEWT+I-1)
-      MSG = 'DLSODAR-  EWT(I1) is R1 .le. 0.0        '
-      CALL XERRWD (MSG, 40, 21, 0, 1, I, 0, 1, EWTI, 0.0D0)
+C      MSG = 'DLSODA-  EWT(I1) is R1 .le. 0.0         '
+C      CALL XERRWD (MSG, 40, 21, 0, 1, I, 0, 1, EWTI, 0.0D0)
+      common_data%error_message = 
+     1 'EWT(i) for some i is < 0.0'
       GO TO 700
- 622  MSG='DLSODAR- TOUT(=R1) too close to T(=R2) to start integration.'
-      CALL XERRWD (MSG, 60, 22, 0, 0, 0, 0, 2, TOUT, T)
+C 622  MSG='DLSODA-  TOUT(=R1) too close to T(=R2) to start integration.'
+C      CALL XERRWD (MSG, 60, 22, 0, 0, 0, 0, 2, TOUT, T)
+ 622  common_data%error_message = 
+     1 'TOUT is too close to T to start integration.'
       GO TO 700
- 623  MSG='DLSODAR-  ITASK = I1 and TOUT (=R1) behind TCUR - HU (= R2) '
-      CALL XERRWD (MSG, 60, 23, 0, 1, ITASK, 0, 2, TOUT, TP)
+C 623  MSG='DLSODA-  ITASK = I1 and TOUT (=R1) behind TCUR - HU (= R2)  '
+C      CALL XERRWD (MSG, 60, 23, 0, 1, ITASK, 0, 2, TOUT, TP)
+ 623  common_data%error_message = 
+     1 'TOUT switches the direction of integration.'
       GO TO 700
- 624  MSG='DLSODAR-  ITASK = 4 or 5 and TCRIT (=R1) behind TCUR (=R2)  '
-      CALL XERRWD (MSG, 60, 24, 0, 0, 0, 0, 2, TCRIT, TN)
+C 624  MSG='DLSODA-  ITASK = 4 or 5 and TCRIT (=R1) behind TCUR (=R2)   '
+C      CALL XERRWD (MSG, 60, 24, 0, 0, 0, 0, 2, TCRIT, TN)
+ 624  common_data%error_message = 
+     1 'ITASK = 4 or 5 and TCRIT behind TCUR.'
       GO TO 700
- 625  MSG='DLSODAR-  ITASK = 4 or 5 and TCRIT (=R1) behind TOUT (=R2)  '
-      CALL XERRWD (MSG, 60, 25, 0, 0, 0, 0, 2, TCRIT, TOUT)
+C 625  MSG='DLSODA-  ITASK = 4 or 5 and TCRIT (=R1) behind TOUT (=R2)   '
+C      CALL XERRWD (MSG, 60, 25, 0, 0, 0, 0, 2, TCRIT, TOUT)
+ 625  common_data%error_message = 
+     1 'ITASK = 4 or 5 and TCRIT behind TOUT.'
       GO TO 700
- 626  MSG = 'DLSODAR-  At start of problem, too much accuracy  '
-      CALL XERRWD (MSG, 50, 26, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
-      MSG='      requested for precision of machine..  See TOLSF (=R1) '
-      CALL XERRWD (MSG, 60, 26, 0, 0, 0, 0, 1, TOLSF, 0.0D0)
+C 626  MSG = 'DLSODA-  At start of problem, too much accuracy   '
+C      CALL XERRWD (MSG, 50, 26, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C      MSG='      requested for precision of machine..  See TOLSF (=R1) '
+C      CALL XERRWD (MSG, 60, 26, 0, 0, 0, 0, 1, TOLSF, 0.0D0)
+ 626  common_data%error_message = 
+     1 'At start of problem, too much accuracy is requested.'
       RWORK(14) = TOLSF
       GO TO 700
- 627  MSG = 'DLSODAR-  Trouble in DINTDY. ITASK = I1, TOUT = R1'
-      CALL XERRWD (MSG, 50, 27, 0, 1, ITASK, 0, 1, TOUT, 0.0D0)
+C 627  MSG = 'DLSODA-  Trouble in DINTDY.  ITASK = I1, TOUT = R1'
+C      CALL XERRWD (MSG, 50, 27, 0, 1, ITASK, 0, 1, TOUT, 0.0D0)
+ 627  common_data%error_message = 
+     1 'Trouble in DINTDY.'
       GO TO 700
- 628  MSG = 'DLSODAR-  MXORDN (=I1) .lt. 0 '
-      CALL XERRWD (MSG, 30, 28, 0, 1, MXORDN, 0, 0, 0.0D0, 0.0D0)
+C 628  MSG = 'DLSODA-  MXORDN (=I1) .lt. 0  '
+C      CALL XERRWD (MSG, 30, 28, 0, 1, MXORDN, 0, 0, 0.0D0, 0.0D0)
+ 628  common_data%error_message = 
+     1 'MXORDN < 0'
       GO TO 700
- 629  MSG = 'DLSODAR-  MXORDS (=I1) .lt. 0 '
-      CALL XERRWD (MSG, 30, 29, 0, 1, MXORDS, 0, 0, 0.0D0, 0.0D0)
+C 629  MSG = 'DLSODA-  MXORDS (=I1) .lt. 0  '
+C      CALL XERRWD (MSG, 30, 29, 0, 1, MXORDS, 0, 0, 0.0D0, 0.0D0)
+ 629  common_data%error_message = 
+     1 'MXORDS < 0'
       GO TO 700
- 630  MSG = 'DLSODAR-  NG (=I1) .lt. 0     '
-      CALL XERRWD (MSG, 30, 30, 0, 1, NG, 0, 0, 0.0D0, 0.0D0)
+C 630  MSG = 'DLSODAR-  NG (=I1) .lt. 0     '
+C      CALL XERRWD (MSG, 30, 30, 0, 1, NG, 0, 0, 0.0D0, 0.0D0)
+ 630  common_data%error_message = 
+     1 'NG < 0'
       GO TO 700
- 631  MSG = 'DLSODAR-  NG changed (from I1 to I2) illegally,   '
-      CALL XERRWD (MSG, 50, 31, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
-      MSG = '      i.e. not immediately after a root was found.'
-      CALL XERRWD (MSG, 50, 31, 0, 2, NGC, NG, 0, 0.0D0, 0.0D0)
+C 631  MSG = 'DLSODAR-  NG changed (from I1 to I2) illegally,   '
+C      CALL XERRWD (MSG, 50, 31, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C      MSG = '      i.e. not immediately after a root was found.'
+C      CALL XERRWD (MSG, 50, 31, 0, 2, NGC, NG, 0, 0.0D0, 0.0D0)
+ 631  common_data%error_message = 
+     1 'NG changed illegally '//
+     1 '(i.e. not immediately after a root was found)'
       GO TO 700
- 632  MSG = 'DLSODAR-  One or more components of g has a root  '
-      CALL XERRWD (MSG, 50, 32, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
-      MSG = '      too near to the initial point.    '
-      CALL XERRWD (MSG, 40, 32, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C 632  MSG = 'DLSODAR-  One or more components of g has a root  '
+C      CALL XERRWD (MSG, 50, 32, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C      MSG = '      too near to the initial point.    '
+C      CALL XERRWD (MSG, 40, 32, 0, 0, 0, 0, 0, 0.0D0, 0.0D0)
+ 632  common_data%error_message = 
+     1 'One or more components of g has a root'//
+     1 ' too near to the initial point.'
 C
  700  ISTATE = -3
       RETURN
 C
- 800  MSG = 'DLSODAR-  Run aborted.. apparent infinite loop.   '
-      CALL XERRWD (MSG, 50, 303, 2, 0, 0, 0, 0, 0.0D0, 0.0D0)
+C 800  MSG = 'DLSODAR-  Run aborted.. apparent infinite loop.   '
+C      CALL XERRWD (MSG, 50, 303, 2, 0, 0, 0, 0, 0.0D0, 0.0D0)
+ 800  common_data%error_message = 
+     1 common_data%error_message//
+     1 ' Run aborted. apparent infinite loop.'
       RETURN
 C----------------------- End of Subroutine DLSODAR ---------------------
       END

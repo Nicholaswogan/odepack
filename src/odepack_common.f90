@@ -54,7 +54,17 @@ module odepack_common
   ! 1   LG0, LG1, LGX, IOWNR3(2), IRFND, ITASKC, NGC, NGE
 
   type :: odepack_common_data
+    !> To turn on/off printing in LSODA
+    integer :: iprint
+
+    !> carries error messages from inside
+    !> the core integrator to the wrapper
+    character(:), allocatable :: error_message
+
+    !> For errors in user supplied functions
     integer :: ierr
+
+    ! common blocks
     type(DLS001_type) :: DLS001
     type(DLSA01_type) :: DLSA01
     type(DLSR01_type) :: DLSR01

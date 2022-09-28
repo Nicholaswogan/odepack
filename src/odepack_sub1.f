@@ -355,13 +355,17 @@ C
       RETURN
 C
  80   MSG = 'DINTDY-  K (=I1) illegal      '
+      if (common_data%iprint == 1) then
       CALL XERRWD (MSG, 30, 51, 0, 1, K, 0, 0, 0.0D0, 0.0D0)
+      endif
       IFLAG = -1
       RETURN
  90   MSG = 'DINTDY-  T (=R1) illegal      '
+      if (common_data%iprint == 1) then
       CALL XERRWD (MSG, 30, 52, 0, 0, 0, 0, 1, T, 0.0D0)
       MSG='      T not in interval TCUR - HU (= R1) to TCUR (=R2)      '
       CALL XERRWD (MSG, 60, 52, 0, 0, 0, 0, 2, TP, TN)
+      endif
       IFLAG = -2
       RETURN
 C----------------------- END OF SUBROUTINE DINTDY ----------------------
