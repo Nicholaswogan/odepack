@@ -38,5 +38,7 @@ The file `src/odepack_mod.f90` contains extensive comments describing the use of
 ## Differences from original ODEPACK
 
 - This repository replaces `common` blocks with a passed derived type. This makes the code threadsafe.
+- The code now attempts to link to optimized linear algebra routines (e.g. OpenBLAS). If, e.g. OpenBLAS, is not found on the system, then compilation falls back on LAPACK routines downloaded from [netlib](https://netlib.org/lapack/). This replaces the old LINPACK routines that came with the original version of ODEPACK.
 - This repository changes the interface to the ODE right-hand-side subroutine, the jacobian and the root-finding subroutine, by adding a `ierr` argument. If `ierr` is set to less than 0 in these subroutines, then the integration is gracefully terminated.
 - Root-finding now indicates the direction of the root. See variable `jroot` in `src/odepack_mod.f90`
+- LSODA no longer prints fatal error messages. Error messages are stored in a string which the user can access and print if they like. See `error_message` in `src/odepack_mod.f90`.

@@ -522,7 +522,8 @@ C
 C***FIRST EXECUTABLE STATEMENT  DSOLSY
       IERSL = 0
       GO TO (100, 100, 300, 400, 400), MITER
- 100  CALL DGESL (WM(3), N, N, IWM(21), X, 0)
+C 100  CALL DGESL (WM(3), N, N, IWM(21), X, 0)
+ 100  call dgetrs ('N', n, 1, wm(3), n, iwm(21), x, n, ier)
       RETURN
 C
  300  PHL0 = WM(2)
@@ -543,7 +544,8 @@ C
  400  ML = IWM(1)
       MU = IWM(2)
       MEBAND = 2*ML + MU + 1
-      CALL DGBSL (WM(3), MEBAND, N, ML, MU, IWM(21), X, 0)
+C      CALL DGBSL (WM(3), MEBAND, N, ML, MU, IWM(21), X, 0)
+      call dgbtrs ('N', n, ml, mu, 1, wm(3), meband, iwm(21), x, n, ier)
       RETURN
 C----------------------- END OF SUBROUTINE DSOLSY ----------------------
       END
@@ -1598,7 +1600,8 @@ C Add identity matrix. -------------------------------------------------
         WM(J) = WM(J) + 1.0D0
  250    J = J + NP1
 C Do LU decomposition on P. --------------------------------------------
-      CALL DGEFA (WM(3), N, N, IWM(21), IER)
+C      CALL DGEFA (WM(3), N, N, IWM(21), IER)
+      call dgetrf (n, n, wm(3), n, iwm(21), ier)
       IF (IER .NE. 0) IERPJ = 1
       RETURN
 C Dummy block only, since MITER is never 3 in this routine. ------------
@@ -1658,7 +1661,8 @@ C Add identity matrix. -------------------------------------------------
         WM(II) = WM(II) + 1.0D0
  580    II = II + MEBAND
 C Do LU decomposition of P. --------------------------------------------
-      CALL DGBFA (WM(3), MEBAND, N, ML, MU, IWM(21), IER)
+C      CALL DGBFA (WM(3), MEBAND, N, ML, MU, IWM(21), IER)
+      call dgbtrf (n, n, ml, mu, wm(3), meband, iwm(21), ier)
       IF (IER .NE. 0) IERPJ = 1
       RETURN
 C----------------------- End of Subroutine DPRJA -----------------------
