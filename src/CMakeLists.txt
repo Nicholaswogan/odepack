@@ -6,13 +6,14 @@ add_library(odepack
   odepack.f
 )
 
-find_package(LAPACK)
+if (${REQUIRE_FAST_LAPACK})
+  find_package(LAPACK REQUIRED)
+else()
+  find_package(LAPACK)
+endif()
 if (${LAPACK_FOUND})
   target_link_libraries(odepack ${LAPACK_LIBRARIES})
 else()
-  if (${REQUIRE_FAST_LAPACK})
-    message(FATAL_ERROR "CMake could not find LAPACK.")
-  endif()
   # We compile lapack files downloaded from netlib
   file(GLOB LAPACK_SRC_FILES lapack/*.f)
   add_library(lapack ${LAPACK_SRC_FILES})
@@ -25,9 +26,9 @@ add_library(odepack_mod
 target_link_libraries(odepack_mod odepack)
 
 if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU")
-  target_compile_options(odepack PRIVATE -std=legacy -w)
+  target_compile_options(odepack PRIVATE -std=legacy)
   if ("${CMAKE_BUILD_TYPE}" MATCHES "Release")
-    target_compile_options(odepack PRIVATE -funroll-loops -finline-functions)
-    target_compile_options(odepack_mod PRIVATE -funroll-loops -finline-functions)
+    target_compile_options(odepack PRIVATE -funroll-loops)
+    target_compile_options(odepack_mod PRIVATE -funroll-loops)
   endif()
 endif()
