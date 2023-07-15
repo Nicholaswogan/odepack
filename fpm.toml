@@ -6,6 +6,11 @@ description = "Modern Fortran interface to part of ODEPACK"
 homepage = "https://github.com/Nicholaswogan/odepack"
 keywords = ["ODE"]
 
+[fortran]
+source-form = "default"
+implicit-external = true
+implicit-typing = true
+
 [library]
 source-dir = "src"
 
