@@ -47,7 +47,7 @@ module odepack_interface
     subroutine dlsoda(f, neq, y, t, tout, itol, rtol, atol, itask, &
                       istate, iopt, rwork, lrw, iwork, liw, jac, jt, &
                       common_data)
-      import :: dp, odepack_common_data
+      import :: dp, odepack_common_data, odepack_f, odepack_jac
       implicit none
       procedure(odepack_f) :: f
       integer, intent(in) :: neq
@@ -72,7 +72,7 @@ module odepack_interface
     subroutine dlsodar(f, neq, y, t, tout, itol, rtol, atol, itask, &
                        istate, iopt, rwork, lrw, iwork, liw, jac, jt, g, ng, jroot, &
                        common_data)
-      import :: dp, odepack_common_data
+      import :: dp, odepack_common_data, odepack_f, odepack_jac, odepack_g
       implicit none
       procedure(odepack_f) :: f
       integer, intent(in) :: neq
