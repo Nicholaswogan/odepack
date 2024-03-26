@@ -5,7 +5,7 @@ module odepack_interface
   private
 
   public :: dlsoda, dlsodar
-  public :: DINTDY, DROOTS
+  public :: DINTDY, DROOTS, DSTODA, DRCHEK
 
   abstract interface
     subroutine odepack_f(neq, t, y, ydot, ierr)
@@ -114,6 +114,26 @@ module odepack_interface
       INTEGER NG, JFLAG, JROOT
       DOUBLE PRECISION HMIN, X0, X1, G0, G1, GX, X
       DIMENSION G0(NG), G1(NG), GX(NG), JROOT(NG)
+    end subroutine
+
+    SUBROUTINE DSTODA (NEQ, Y, YH, NYH, YH1, EWT, SAVF, ACOR, &
+                       WM, IWM, F, JAC, PJAC, SLVS, common_data)
+      import :: odepack_common_data
+      type(odepack_common_data), target, intent(inout) :: common_data
+      EXTERNAL F, JAC, PJAC, SLVS
+      INTEGER NEQ, NYH, IWM
+      DOUBLE PRECISION Y, YH, YH1, EWT, SAVF, ACOR, WM
+      DIMENSION NEQ(*), Y(*), YH(NYH,*), YH1(*), EWT(*), SAVF(*), &
+                ACOR(*), WM(*), IWM(*)
+    end subroutine
+
+    SUBROUTINE DRCHEK (JOB, G, NEQ, Y, YH,NYH, G0, G1, GX, JROOT, IRT, common_data)
+      import :: odepack_common_data
+      type(odepack_common_data), target, intent(inout) :: common_data
+      EXTERNAL G
+      INTEGER JOB, NEQ, NYH, JROOT, IRT
+      DOUBLE PRECISION Y, YH, G0, G1, GX
+      DIMENSION NEQ(*), Y(*), YH(NYH,*), G0(*), G1(*), GX(*), JROOT(*)
     end subroutine
   end interface
 
