@@ -1,8 +1,8 @@
 import numpy as np
-from numba import njit, int64, float64
+from numba import njit, int64, float64, void
 
 
-@njit
+@njit(int64(float64[:, :], int64[:]))
 def dgetrf(a, ipiv):
     """
     In-place LU factorization with partial pivoting (Numba).
@@ -46,7 +46,7 @@ def dgetrf(a, ipiv):
     return info
 
 
-@njit
+@njit(void(float64[:, :], int64[:], float64[:]))
 def dgetrs(a, ipiv, b):
     """
     Solve A*x = b using LU factors from dgetrf (no transpose).
@@ -76,7 +76,7 @@ def dgetrs(a, ipiv, b):
         b[i] /= a[i, i]
 
 
-@njit
+@njit(int64(float64[:, :], int64, int64, int64, int64, int64[:], int64))
 def dgbtrf(ab, m, n, kl, ku, ipiv, ldab):
     """
     LU factorization of a band matrix in LAPACK storage.
@@ -101,7 +101,7 @@ def dgbtrf(ab, m, n, kl, ku, ipiv, ldab):
     return info
 
 
-@njit
+@njit(void(float64[:, :], int64, int64, int64, int64, int64[:], float64[:], int64))
 def dgbtrs(ab, m, n, kl, ku, ipiv, b, ldab):
     """
     Solve A*x = b for band matrix using LU from dgbtrf (no transpose).

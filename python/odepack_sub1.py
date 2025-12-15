@@ -191,7 +191,15 @@ def dintdy(t, k, yh, nyh, dky, iflag, common):
             dky[i] = r * dky[i]
 
 
-@njit
+@njit(
+    void(
+        float64[:],           # wm
+        int64[:],             # iwm
+        float64[:],           # x
+        float64[:],           # tem
+        CommonData.class_type.instance_type,
+    )
+)
 def dsolsy(wm, iwm, x, tem, common):
     """
     Numba version of DSOLSY.
