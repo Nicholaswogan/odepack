@@ -1,5 +1,6 @@
 import numpy as np
-from numba import njit, float64, int64, void
+from numba import njit, float64, int64, void, types
+from numba.experimental import jitclass
 
 
 @njit(float64())
@@ -100,3 +101,90 @@ def dcfode(meth, elco, tesco):
 
     else:
         raise ValueError("meth must be 1 (Adams) or 2 (BDF)")
+
+
+# Common-data structure mirroring odepack_common_data derived type.
+common_spec = [
+    ("iprint", int64),
+    ("error_message", types.unicode_type),
+    ("ierr", int64),
+    ("DLS001_reals", float64[::1]),
+    ("DLS001_ints", int64[::1]),
+    ("DLSA01_reals", float64[::1]),
+    ("DLSA01_ints", int64[::1]),
+    ("DLSR01_reals", float64[::1]),
+    ("DLSR01_ints", int64[::1]),
+]
+
+
+@jitclass(common_spec)
+class CommonData:
+    def __init__(self, iprint, ierr, error_message):
+        self.iprint = iprint
+        self.error_message = error_message
+        self.ierr = ierr
+        self.DLS001_reals = np.zeros(218, dtype=np.float64)
+        self.DLS001_ints = np.zeros(37, dtype=np.int64)
+        self.DLSA01_reals = np.zeros(22, dtype=np.float64)
+        self.DLSA01_ints = np.zeros(9, dtype=np.int64)
+        self.DLSR01_reals = np.zeros(5, dtype=np.float64)
+        self.DLSR01_ints = np.zeros(9, dtype=np.int64)
+
+
+@njit(void(float64, int64, float64[:, ::1], int64, float64[:], int64[:], CommonData.class_type.instance_type))
+def dintdy(t, k, yh, nyh, dky, iflag, common):
+    """
+    Numba version of DINTDY.
+    iflag is a length-1 int64 array for output status.
+    """
+    # map Fortran common layout offsets (1-based in Fortran, 0-based here)
+    dls_reals = common.DLS001_reals
+    dls_ints = common.DLS001_ints
+
+    h = dls_reals[211]    # reals(212)
+    hu = dls_reals[214]   # reals(215)
+    tn = dls_reals[216]   # reals(217)
+    uround = dls_reals[217]  # reals(218)
+
+    l = dls_ints[18]   # ints(19)
+    n = dls_ints[31]   # ints(32)
+    nq = dls_ints[32]  # ints(33)
+
+    iflag[0] = 0
+    if k < 0 or k > nq:
+        iflag[0] = -1
+        return
+
+    sign_hu = 1.0 if hu >= 0.0 else -1.0
+    tp = tn - hu - 100.0 * uround * sign_hu * (abs(tn) + abs(hu))
+    if (t - tp) * (t - tn) > 0.0:
+        iflag[0] = -2
+        return
+
+    s = (t - tn) / h
+    ic = 1
+    if k != 0:
+        for jj in range(l - k, nq + 1):
+            ic *= jj
+    c = ic
+
+    for i in range(n):
+        dky[i] = c * yh[i, l - 1]
+
+    if k != nq:
+        jb2 = nq - k
+        for jb in range(1, jb2 + 1):
+            j = nq - jb
+            jp1 = j + 1
+            ic = 1
+            if k != 0:
+                for jj in range(jp1 - k, j + 1):
+                    ic *= jj
+            c = ic
+            for i in range(n):
+                dky[i] = c * yh[i, jp1 - 1] + s * dky[i]
+
+    if k != 0:
+        r = h ** (-k)
+        for i in range(n):
+            dky[i] = r * dky[i]
