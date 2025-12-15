@@ -2,6 +2,7 @@ import numpy as np
 from numba import njit, float64, int64, void, types
 from numba.experimental import jitclass
 
+from lapack import dgetrs, dgbtrs
 
 @njit(float64())
 def dumach():
@@ -188,3 +189,67 @@ def dintdy(t, k, yh, nyh, dky, iflag, common):
         r = h ** (-k)
         for i in range(n):
             dky[i] = r * dky[i]
+
+
+@njit
+def dsolsy(wm, iwm, x, tem, common):
+    """
+    Numba version of DSOLSY.
+
+    Parameters mirror Fortran:
+    wm : 1D float64 work array
+    iwm: 1D int64 work array
+    x  : RHS on input, solution on output
+    tem: workspace (unused)
+    common: CommonData jitclass
+    """
+    el0 = common.DLS001_reals[210]
+    h = common.DLS001_reals[211]
+    miter = common.DLS001_ints[26]
+    n = common.DLS001_ints[31]
+
+    ml = iwm[0]
+    mu = iwm[1]
+    ldab = 2 * ml + mu + 1
+
+    if miter == 3:
+        phl0 = wm[1]
+        hl0 = h * el0
+        wm[1] = hl0
+        if hl0 != phl0:
+            r = hl0 / phl0
+            for i in range(n):
+                di = 1.0 - r * (1.0 - 1.0 / wm[2 + i])
+                wm[2 + i] = 1.0 / di
+        for i in range(n):
+            x[i] = wm[2 + i] * x[i]
+        common.DLS001_ints[14] = 0  # IERSL
+        return
+
+    if miter in (1, 2):
+        # wm stores the LU factors in column-major order starting at offset 2.
+        a = np.empty((n, n), dtype=np.float64)
+        idx = 0
+        for j in range(n):
+            for i in range(n):
+                a[i, j] = wm[2 + idx]
+                idx += 1
+        piv = iwm[20 : 20 + n]
+        dgetrs(a, piv, x)
+        common.DLS001_ints[14] = 0
+        return
+
+    if miter in (4, 5):
+        # Band LU is stored column-major in wm.
+        ab = np.empty((ldab, n), dtype=np.float64)
+        idx = 0
+        for j in range(n):
+            for i in range(ldab):
+                ab[i, j] = wm[2 + idx]
+                idx += 1
+        piv = iwm[20 : 20 + n]
+        dgbtrs(ab, n, n, ml, mu, piv, x, ldab)
+        common.DLS001_ints[14] = 0
+        return
+
+    common.DLS001_ints[14] = -1

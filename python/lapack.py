@@ -81,20 +81,7 @@ def dgbtrf(ab, m, n, kl, ku, ipiv, ldab):
     """
     LU factorization of a band matrix in LAPACK storage.
 
-    To keep implementation simple and robust, this converts to dense,
-    factors with dgetrf, then packs the LU back into band storage.
-
-    Parameters
-    ----------
-    ab : 2D float64 array, shape (ldab, n), band storage (modified in-place)
-    m, n : matrix dimensions
-    kl, ku : lower/upper bandwidths
-    ipiv : 1D int64 pivot array, length min(m, n)
-    ldab : leading dimension (>= 2*kl+ku+1)
-
-    Returns
-    -------
-    info : int64
+    Parameters mirror LAPACK. Factors in-place; returns info.
     """
     # Form dense copy
     Ad = np.zeros((m, n), dtype=np.float64)
