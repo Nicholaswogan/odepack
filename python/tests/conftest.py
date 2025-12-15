@@ -37,6 +37,7 @@ def build_dir(tmp_path_factory, request):
             "odepack_sub1_driver",
             "odepack_sub2_driver",
             "odepack_sub1_dintdy_driver",
+            "lapack_drivers",
         ],
         check=True,
     )
@@ -66,6 +67,13 @@ def run_dir_sub2(build_dir):
 @pytest.fixture(scope="session")
 def run_dir_dintdy(build_dir):
     exe_path = _find_exe(build_dir, "odepack_sub1_dintdy_driver")
+    subprocess.run([str(exe_path)], check=True, cwd=exe_path.parent)
+    return exe_path.parent
+
+
+@pytest.fixture(scope="session")
+def run_dir_lapack(build_dir):
+    exe_path = _find_exe(build_dir, "lapack_drivers")
     subprocess.run([str(exe_path)], check=True, cwd=exe_path.parent)
     return exe_path.parent
 

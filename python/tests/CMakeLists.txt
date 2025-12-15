@@ -13,6 +13,13 @@ if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU")
   target_compile_options(odepack_sub2_driver PRIVATE -std=legacy)
 endif()
 
+add_executable(lapack_drivers "${CMAKE_CURRENT_SOURCE_DIR}/test_lapack_drivers.f90")
+target_link_libraries(lapack_drivers odepack_mod)
+target_include_directories(lapack_drivers PUBLIC ${CMAKE_Fortran_MODULE_DIRECTORY})
+if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU")
+  target_compile_options(lapack_drivers PRIVATE -std=legacy)
+endif()
+
 add_executable(odepack_sub1_dintdy_driver "${CMAKE_CURRENT_SOURCE_DIR}/test_odepack_sub1_dintdy.f90")
 target_link_libraries(odepack_sub1_dintdy_driver odepack_mod)
 target_include_directories(odepack_sub1_dintdy_driver PUBLIC ${CMAKE_Fortran_MODULE_DIRECTORY})
