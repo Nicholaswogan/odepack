@@ -1,5 +1,3 @@
-import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -11,42 +9,9 @@ sys.path.insert(0, str(REPO_ROOT / "python"))
 from odepack_sub1 import CommonData, dintdy  # noqa: E402
 
 
-def _check_tools():
-    if shutil.which("cmake") is None or shutil.which("gfortran") is None:
-        pytest.skip("cmake/gfortran not available; skipping Fortran reference build")
-
-
-def _build_and_run_driver(tmp_path, target):
-    build_dir = tmp_path / "cmake_build"
-    subprocess.run(
-        ["cmake", "-S", str(Path(__file__).resolve().parents[2]), "-B", str(build_dir), "-DENABLE_PYTHON_TESTS=ON"],
-        check=True,
-    )
-    subprocess.run(["cmake", "--build", str(build_dir), "--target", target], check=True)
-
-    candidates = [
-        build_dir / "python" / "tests" / target,
-        build_dir / "test" / target,
-        build_dir / target,
-    ]
-    exe_path = None
-    for cand in candidates:
-        cand_exe = cand.with_suffix(".exe") if sys.platform.startswith("win") else cand
-        if cand_exe.exists():
-            exe_path = cand_exe
-            break
-    if exe_path is None:
-        pytest.skip(f"{target} not built or not found")
-
-    subprocess.run([str(exe_path)], check=True, cwd=exe_path.parent)
-    return exe_path.parent
-
-
 @pytest.fixture(scope="session")
-def fortran_reference(tmp_path_factory):
-    _check_tools()
-    run_dir = _build_and_run_driver(tmp_path_factory.mktemp("build_dintdy"), "odepack_sub1_dintdy_driver")
-    bin_path = run_dir / "dintdy_ref.bin"
+def fortran_reference(run_dir_dintdy):
+    bin_path = run_dir_dintdy / "dintdy_ref.bin"
     data = memoryview(bin_path.read_bytes())
     ref = []
     pos = 0

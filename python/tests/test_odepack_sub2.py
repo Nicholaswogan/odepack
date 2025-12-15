@@ -1,5 +1,3 @@
-import shutil
-import subprocess
 import sys
 from io import StringIO
 from pathlib import Path
@@ -13,41 +11,6 @@ sys.path.insert(0, str(REPO_ROOT / "python"))
 from odepack_sub2 import ixsav, xerrwd  # noqa: E402
 
 
-def _check_tools():
-    if shutil.which("cmake") is None or shutil.which("gfortran") is None:
-        pytest.skip("cmake/gfortran not available; skipping Fortran reference build")
-
-
-def _build_and_run_driver(tmp_path, target):
-    build_dir = tmp_path / "cmake_build"
-    subprocess.run(
-        ["cmake", "-S", str(REPO_ROOT), "-B", str(build_dir), "-DENABLE_PYTHON_TESTS=ON"],
-        check=True,
-    )
-    subprocess.run(["cmake", "--build", str(build_dir), "--target", target], check=True)
-
-    candidates = [
-        build_dir / "python" / "tests" / target,
-        build_dir / "test" / target,
-        build_dir / target,
-    ]
-    exe_path = None
-    for cand in candidates:
-        if sys.platform.startswith("win"):
-            cand_exe = cand.with_suffix(".exe")
-            if cand_exe.exists():
-                exe_path = cand_exe
-                break
-        if cand.exists():
-            exe_path = cand
-            break
-    if exe_path is None:
-        pytest.skip(f"{target} not built or not found")
-
-    subprocess.run([str(exe_path)], check=True, cwd=exe_path.parent)
-    return exe_path.parent
-
-
 def _normalize_line(line):
     toks = line.strip().replace(",", " ").split()
     norm = []
@@ -55,7 +18,6 @@ def _normalize_line(line):
         t_repl = t.replace("D", "E")
         try:
             val = float(t_repl)
-            # keep ints as ints when exact
             if val.is_integer():
                 norm.append(int(val))
             else:
@@ -72,10 +34,8 @@ def _normalize_output(lines):
 
 
 @pytest.fixture(scope="session")
-def fortran_output(tmp_path_factory):
-    _check_tools()
-    run_dir = _build_and_run_driver(tmp_path_factory.mktemp("build_sub2"), "odepack_sub2_driver")
-    txt_path = run_dir / "odepack_sub2.txt"
+def fortran_output(run_dir_sub2):
+    txt_path = run_dir_sub2 / "odepack_sub2.txt"
     return txt_path.read_text().splitlines()
 
 

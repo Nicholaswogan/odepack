@@ -1,5 +1,3 @@
-import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -10,51 +8,12 @@ from numpy.testing import assert_allclose
 # Ensure we can import the Python implementation without installing a package.
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "python"))
-from odepack_sub1 import dcfode, dumach
-
-
-def _check_tools():
-    if shutil.which("cmake") is None:
-        pytest.skip("cmake not available; skipping Fortran reference build")
-    if shutil.which("gfortran") is None:
-        pytest.skip("gfortran not available; skipping Fortran reference build")
+from odepack_sub1 import dcfode, dumach  # noqa: E402
 
 
 @pytest.fixture(scope="session")
-def fortran_reference(tmp_path_factory):
-    _check_tools()
-    build_dir = tmp_path_factory.mktemp("cmake_build")
-    src_dir = REPO_ROOT
-
-    # Configure and build the dedicated driver target using the project's CMake.
-    subprocess.run(
-        ["cmake", "-S", str(src_dir), "-B", str(build_dir), "-DENABLE_PYTHON_TESTS=ON"],
-        check=True,
-    )
-    subprocess.run(["cmake", "--build", str(build_dir), "--target", "odepack_sub1_driver"], check=True)
-
-    candidates = [
-        Path(build_dir) / "python" / "tests" / "odepack_sub1_driver",
-        Path(build_dir) / "test" / "odepack_sub1_driver",
-        Path(build_dir) / "odepack_sub1_driver",
-    ]
-    exe_path = None
-    for cand in candidates:
-        if sys.platform.startswith("win"):
-            cand_exe = cand.with_suffix(".exe")
-            if cand_exe.exists():
-                exe_path = cand_exe
-                break
-        if cand.exists():
-            exe_path = cand
-            break
-    if exe_path is None:
-        pytest.skip("odepack_sub1_driver not built or not found")
-
-    # Run the driver; it writes odepack_sub1.bin in its working directory.
-    subprocess.run([str(exe_path)], check=True, cwd=exe_path.parent)
-
-    bin_path = exe_path.parent / "odepack_sub1.bin"
+def fortran_reference(run_dir_sub1):
+    bin_path = Path(run_dir_sub1) / "odepack_sub1.bin"
     raw = np.fromfile(bin_path, dtype=np.float64)
     expected_len = 1 + 156 + 36 + 156 + 36  # dumach + elco1 + tesco1 + elco2 + tesco2
     assert raw.size == expected_len, f"Unexpected reference size {raw.size}, expected {expected_len}"
