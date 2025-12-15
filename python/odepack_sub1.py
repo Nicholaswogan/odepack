@@ -294,3 +294,59 @@ def dewset(n, itol, rtol, atol, ycur, ewt):
             ewt[i] = rtol[i] * abs(ycur[i]) + atol[i]
     else:
         raise ValueError("itol must be 1, 2, 3, or 4")
+
+
+@njit(float64(int64, float64[:], float64[:]))
+def dmnorm(n, v, w):
+    """
+    Weighted max-norm: max_i |v_i| * w_i
+    """
+    vm = 0.0
+    for i in range(n):
+        val = abs(v[i]) * w[i]
+        if val > vm:
+            vm = val
+    return vm
+
+
+@njit(float64(int64, float64[:, :], float64[:]))
+def dfnorm(n, a, w):
+    """
+    Weighted matrix norm for dense matrix:
+    max_i w_i * sum_j |a_ij| / w_j
+    """
+    an = 0.0
+    for i in range(n):
+        s = 0.0
+        for j in range(n):
+            s += abs(a[i, j]) / w[j]
+        val = s * w[i]
+        if val > an:
+            an = val
+    return an
+
+
+@njit(float64(int64, float64[:, :], int64, int64, int64, float64[:]))
+def dbnorm(n, a, nra, ml, mu, w):
+    """
+    Weighted matrix norm for band matrix stored with nra rows (>= ml+mu+1):
+    max_i w_i * sum_j |a_ij| / w_j  over j within bandwidth.
+    Band storage matches Fortran DBNORM.
+    """
+    an = 0.0
+    for i in range(n):
+        s = 0.0
+        i1 = i + mu
+        jlo = i - ml
+        if jlo < 0:
+            jlo = 0
+        jhi = i + mu
+        if jhi > n - 1:
+            jhi = n - 1
+        for j in range(jlo, jhi + 1):
+            row = i1 - j
+            s += abs(a[row, j]) / w[j]
+        val = s * w[i]
+        if val > an:
+            an = val
+    return an

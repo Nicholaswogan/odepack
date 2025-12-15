@@ -38,3 +38,10 @@ target_include_directories(odepack_sub1_dewset_driver PUBLIC ${CMAKE_Fortran_MOD
 if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU")
   target_compile_options(odepack_sub1_dewset_driver PRIVATE -std=legacy)
 endif()
+
+add_executable(odepack_sub1_norms_driver "${CMAKE_CURRENT_SOURCE_DIR}/test_odepack_sub1_norms.f90")
+target_link_libraries(odepack_sub1_norms_driver odepack_mod)
+target_include_directories(odepack_sub1_norms_driver PUBLIC ${CMAKE_Fortran_MODULE_DIRECTORY})
+if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "GNU")
+  target_compile_options(odepack_sub1_norms_driver PRIVATE -std=legacy)
+endif()

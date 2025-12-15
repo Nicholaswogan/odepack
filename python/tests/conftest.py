@@ -40,6 +40,7 @@ def build_dir(tmp_path_factory, request):
             "odepack_sub1_dintdy_driver",
             "odepack_sub1_dsolsy_driver",
             "odepack_sub1_dewset_driver",
+            "odepack_sub1_norms_driver",
         ],
         check=True,
     )
@@ -97,6 +98,13 @@ def run_dir_dsolsy(build_dir):
 @pytest.fixture(scope="session")
 def run_dir_dewset(build_dir):
     exe_path = _find_exe(build_dir, "odepack_sub1_dewset_driver")
+    subprocess.run([str(exe_path)], check=True, cwd=exe_path.parent)
+    return exe_path.parent
+
+
+@pytest.fixture(scope="session")
+def run_dir_norms(build_dir):
+    exe_path = _find_exe(build_dir, "odepack_sub1_norms_driver")
     subprocess.run([str(exe_path)], check=True, cwd=exe_path.parent)
     return exe_path.parent
 
