@@ -261,3 +261,36 @@ def dsolsy(wm, iwm, x, tem, common):
         return
 
     common.DLS001_ints[14] = -1
+
+
+@njit(void(int64, int64, float64[:], float64[:], float64[:], float64[:]))
+def dewset(n, itol, rtol, atol, ycur, ewt):
+    """
+    Numba version of DEWSET: set error weights.
+
+    Mirrors the Fortran signature:
+      n    : problem size
+      itol : tolerance type (1..4)
+      rtol : relative tolerances (scalar or vector)
+      atol : absolute tolerances (scalar or vector)
+      ycur : current solution vector
+      ewt  : output error weights (length n)
+    """
+    if itol == 1:
+        r = rtol[0]
+        a = atol[0]
+        for i in range(n):
+            ewt[i] = r * abs(ycur[i]) + a
+    elif itol == 2:
+        r = rtol[0]
+        for i in range(n):
+            ewt[i] = r * abs(ycur[i]) + atol[i]
+    elif itol == 3:
+        a = atol[0]
+        for i in range(n):
+            ewt[i] = rtol[i] * abs(ycur[i]) + a
+    elif itol == 4:
+        for i in range(n):
+            ewt[i] = rtol[i] * abs(ycur[i]) + atol[i]
+    else:
+        raise ValueError("itol must be 1, 2, 3, or 4")
